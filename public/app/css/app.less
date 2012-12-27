@@ -1,0 +1,49 @@
+body {
+  padding: 0;
+  margin: 0;
+  font-family: Verdana, sans-serif;
+  font-size: 14px;
+}
+
+nav {
+  height: 40px;
+  border-bottom: solid 1px #f2f2f2;
+
+  a {
+    display: inline-block;
+    float: left;
+    height: 20px;
+    font-size: 14px;
+    line-height: 20px;
+    padding: 10px 15px;
+    border-right: solid 1px #f2f2f2;
+  }
+
+  a:last-child {
+    border-right: none;
+  }
+
+  a:hover {
+    background-color: #f2f2f2;
+  }
+
+  ::after {
+    content: "";
+    clear: both;
+    overflow: hidden;
+    height: 0;
+  }
+}
+
+@media screen{
+  body {
+    color: #777;
+  }
+
+  nav > a {
+    color: inherit;
+  }
+  nav > a:hover {
+    text-decoration: none;
+  }
+}

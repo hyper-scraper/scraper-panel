@@ -1,0 +1,28 @@
+<div class="span8">
+  <h4>Executions</h4>
+</div>
+<div class="clearfix"></div>
+<div class="container-fluid">
+  <table class="table table-ads table-bordered table-striped">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Scraper</th>
+      <th>Start time</th>
+      <th>Finish time</th>
+      <th>Fetched records</th>
+      <th>Error</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="exec in executions">
+      <td>{{exec.id}}</td>
+      <td>{{exec.scraper.name}}</td>
+      <td>{{exec.start_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+      <td>{{exec.finish_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+      <td>{{exec.records}}</td>
+      <td>{{exec.error}}</td>
+    </tr>
+    </tbody>
+  </table>
+</div>

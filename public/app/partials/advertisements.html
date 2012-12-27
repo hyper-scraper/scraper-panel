@@ -1,0 +1,38 @@
+<div class="span8">
+  <h4>Ads</h4>
+</div>
+<div class="clearfix"></div>
+<div class="container-fluid">
+  <table class="table table-ads table-bordered table-striped">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Original ID</th>
+      <th>Date</th>
+      <th>Title</th>
+      <th>Description</th>
+      <th>Price</th>
+      <th>Address</th>
+      <th>Landlord phone</th>
+      <th>Landlord name</th>
+      <th>Landlord type</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="ad in ads">
+      <td>{{ad.id}}</td>
+      <td>
+        <a ng-href="{{ad.ad_url}}">{{ad.ad_id}}</a>
+      </td>
+      <td>{{ad.create_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+      <td>{{ad.ad_title}}</td>
+      <td>{{ad.ad_description}}</td>
+      <td>{{ad.ad_price}} {{ad.ad_price_type}}</td>
+      <td>{{ad.ad_city}}</td>
+      <td>{{ad.ad_landlord_phone}}</td>
+      <td>{{ad.ad_landlord_name}}</td>
+      <td>{{ad.ad_landlord_type | landlord_type}}</td>
+    </tr>
+    </tbody>
+  </table>
+</div>
