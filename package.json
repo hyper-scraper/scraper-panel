@@ -1,17 +1,18 @@
 {
-  "name":         "scraper-panel",
-  "version":      "0.0.1",
-  "private":      true,
-  "scripts":      {
-    "preinstall": "mkdir node_modules ; sh install-mapper.sh",
-    "start": "node app"
+    "name": "scraper-panel",
+    "version": "0.0.1",
+    "private": true,
+    "scripts": {
+        "preinstall": "mkdir node_modules ; sh install-mapper.sh",
+        "start": "node app"
 
-  },
-  "dependencies": {
-    "express":         "3.0.5",
-    "less-middleware": "0.1.9",
-    "socket.io":       "0.9.13",
-    "mapper":          "0.2.2-pre",
-    "phantom-proxy": "latest"
-  }
+    },
+    "dependencies": {
+        "async": "latest",
+        "express": "3.0.5",
+        "less-middleware": "0.1.9",
+        "socket.io": "0.9.13",
+        "mapper": "0.2.2-pre",
+        "phantom-proxy": "latest"
+    }
 }
