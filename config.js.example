@@ -1,0 +1,22 @@
+'use strict';
+
+module.exports = {
+  db:       {
+    host:     'HOSTNAME',
+    port:     3306,
+    database: 'DATABASE',
+    user:     'USERNAME',
+    password: 'PASSWORD',
+    charset:  'utf8',
+    verbose:  false
+  },
+  scrapers: [
+    {
+      type:       'SomeMyCoolScraper',
+      CUSTOM_PROPERTY: 'some-value.jpg',
+      timeout:    100000
+      interval:   300000,
+      limit:      100
+    }
+  ]
+};
