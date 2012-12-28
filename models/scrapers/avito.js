@@ -228,8 +228,8 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
         if (data.hasOwnProperty(k)) {
           if (data[k] && typeof data[k] === 'string') {
             data[k] = data[k].trim();
-            data = data.replace(/<p>/g, '\n');
-            data = data.replace(/<\/p>/g, '');
+            data[k] = data[k].replace(/<p>/g, '\n');
+            data[k] = data[k].replace(/<\/p>/g, '');
           }
         }
       }
