@@ -97,7 +97,7 @@ module.exports = function(app) {
   app.get('/api/advertisements', function(req, res, next) {
     var page = parseInt(req.params.page) || 0;
     Advertisement
-      .select('*')
+      .select('id, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
       .order('id DESC')
       .page(page, 10)
       .load('scraper', function(s) {
