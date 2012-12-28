@@ -223,7 +223,7 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
       exited = true;
       page.emit('error');
 
-      data.create_time = started;
+      data.create_time = started.toJSON();
       for (k in data) {
         if (data.hasOwnProperty(k)) {
           if (data[k] && typeof data[k] === 'string') {

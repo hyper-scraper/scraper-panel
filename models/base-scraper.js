@@ -168,7 +168,7 @@ BaseScraper.prototype.run = function() {
             self.getItemData(proxy.page, url, function(err, item) {
               if (err) {
                 data.push([url, err]);
-              } else if (data) {
+              } else if (item) {
                 data.push(item);
               }
 
