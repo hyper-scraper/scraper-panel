@@ -22,7 +22,7 @@
     <tr ng-repeat="ad in ads">
       <td>{{ad.id}}</td>
       <td>
-        <a ng-href="{{ad.ad_url}}">{{ad.ad_id}}</a>
+        <a target="_blank" ng-href="{{ad.ad_url}}">{{ad.ad_id}}</a>
       </td>
       <td>{{ad.create_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
       <td>{{ad.ad_title}}</td>
