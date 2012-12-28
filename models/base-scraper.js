@@ -4,8 +4,16 @@ var async = require('async')
   , EventEmitter = require('events').EventEmitter
   , phantomProxy = require('phantom-proxy')
   , poolModule = require('generic-pool')
-  , util = require('util');
+  , util = require('util')
+  , exec = require('child_process').exec;
 
+
+process.on('SIGINT', function() {
+  process.emit('stop:wait');
+  exec('killall -9 phantomjs', function() {
+    process.emit('stop:done');
+  });
+});
 
 /**
  * Abstract scraper class
@@ -62,10 +70,6 @@ BaseScraper.prototype.startPool = function() {
         phantomConf,
         function(proxy) {
           callback(null, proxy);
-
-          proxy.page.on('error', function(err) {
-            console.log('ERROR! ' + err);
-          })
         }
       );
     },
@@ -79,6 +83,7 @@ BaseScraper.prototype.startPool = function() {
     idleTimeoutMillis: maxIdle,
     log:               debug
   });
+
   console.log('Created pool %s for scraper', this.pool.getName());
 };
 
@@ -150,25 +155,27 @@ BaseScraper.prototype.run = function() {
 
       filtered.reverse();
       var data = [];
-      async.forEachSeries(filtered, function(url, cb) {
+      async.forEachSeries(filtered, function(url, asyncCallback) {
         pool.acquire(function(err, proxy) {
           if (err) {
-            data.push(err);
+
+            data.push([url, err]);
             console.error('Error acquiring page: ' + err);
-            pool.release(proxy);
-            cb();
+            asyncCallback();
+
           } else {
+
             self.getItemData(proxy.page, url, function(err, item) {
-              console.log('Got response: %s %s', err, item);
               if (err) {
-                data.push(err);
-                console.error('Error getting item data: ' + err);
-              } else {
+                data.push([url, err]);
+              } else if (data) {
                 data.push(item);
               }
+
               pool.release(proxy);
-              cb();
+              asyncCallback();
             });
+
           }
         });
       }, function(err) {
@@ -200,17 +207,23 @@ BaseScraper.prototype.run = function() {
  *    Code to be run in page
  * @param {Function} callback
  *    Callback which takes result of code
+ * @param {boolean} [async]
+ *    Whether run page#evaluateAsync or page#evaluate. Default: false
  */
-BaseScraper.prototype.openAndRun = function(page, url, code, callback) {
-  var config = this.config
+BaseScraper.prototype.openAndRun = function(page, url, code, callback, async) {
+  var self = this
+    , config = this.config
     , externalJQuery = !!config.externalJQuery
     , loaded = false
     , minWait = config.WAIT_MIN || 3000
     , maxWait = config.WAIT_MAX || 7000
     , jsWait = config.WAIT_JS || 2000
-    , waitTime = minWait + Math.random() * (maxWait - minWait);
+    , waitTime = minWait + Math.random() * (maxWait - minWait)
+    , evaluateFunc = async === true ? page.evaluateAsync : page.evaluate;
 
-  function realOpenAndRun() {
+
+  console.log('Waiting %dms to open page', Number(waitTime).toFixed(0));
+  setTimeout(function realOpenAndRun() {
     page.open(url, function(status) {
       if (!loaded) {
         loaded = true;
@@ -224,17 +237,100 @@ BaseScraper.prototype.openAndRun = function(page, url, code, callback) {
           'http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js',
           function() {
             setTimeout(function() {
-              page.evaluate(code, callback);
+              self.runCode(page, code, callback, evaluateFunc);
             }, jsWait);
           });
       } else {
-        page.evaluate(code, callback);
+
+        self.runCode(page, code, callback, evaluateFunc);
       }
     });
-  }
+  }, waitTime);
+};
 
-  console.log('Waiting %dms to open page', Number(waitTime).toFixed(0));
-  setTimeout(realOpenAndRun, waitTime);
+
+/**
+ * Run code and maybe send result to callback function
+ *
+ * @param {*} page
+ *    Phantom page object
+ * @param {Array|Object|Function} code
+ *    Function or bunch of function
+ * @param {Function} callback
+ *    Callback taking args (err, result)
+ * @param {Function} evaluateFn
+ *    page#evaluate or page#evaluateAsync
+ */
+BaseScraper.prototype.runCode = function(page, code, callback, evaluateFn) {
+  evaluateFn = page.evaluate;
+
+  // one simple function
+  if (typeof code === 'function') {
+    evaluateFn.call(page, code, callback);
+
+  // object with timeout
+  } else if (typeof code === 'object' && !Array.isArray(code)) {
+    evaluateFn.call(page, code.code, function(res) {
+      setTimeout(function() {
+        callback(res);
+      }, code.timeout);
+    });
+
+  // bunch of functions
+  } else if (Array.isArray(code)) {
+    var callbacked = false;
+
+    async.forEachSeries(code, function(spec, asyncCallback) {
+      var callbackFn
+        , codeFn;
+
+      // function + timeout
+      if (typeof spec === 'object') {
+        codeFn = spec.code;
+        callbackFn = function(res) {
+          setTimeout(function() {
+            asyncCallback();
+
+            if (res && !callbacked) {
+              callbacked = true;
+              callback(res);
+            }
+
+          }, spec.timeout)
+        };
+        // only function
+      } else if (typeof spec === 'function') {
+        codeFn = spec;
+        callbackFn = function(res) {
+          asyncCallback();
+          if (res && !callbacked) {
+            callbacked = true;
+            callback(res);
+          }
+        };
+        // unknown 'code' array
+      } else {
+        throw new Error('Code spec to run should be function or object');
+      }
+
+      evaluateFn.call(page, codeFn, callbackFn);
+    }, function(err) {
+      if (err) {
+        console.error(err);
+      }
+    });
+  // unknown 'code' type
+  } else {
+    throw new Error('Unknown type of code to evaluate')
+  }
+};
+
+
+/**
+ * @see {BaseScraper.openAndRun}
+ */
+BaseScraper.prototype.openAndRunAsync = function(page, url, code, callback) {
+  this.openAndRun(page, url, code, callback, true);
 };
 
 
@@ -250,9 +346,12 @@ BaseScraper.prototype.openAndRun = function(page, url, code, callback) {
  */
 BaseScraper.prototype.tryParseJson = function(json, callback) {
   try {
-    return JSON.parse(json);
+    var data = JSON.parse(json);
+    if (!data) {
+      throw new Error('No data');
+    }
+    return data;
   } catch (ex) {
-
     if (!ex.message) {
       ex.message = '';
     }

@@ -25,3 +25,17 @@ require('./controller')(app, io);
 server.listen(app.get('port'), function(){
   console.log("Express server listening on port " + app.get('port'));
 });
+
+
+// for graceful shutdown
+var stopJobs = 0;
+process.on('stop:wait', function() {
+  stopJobs++;
+});
+
+process.on('stop:done', function() {
+  if (!--stopJobs) {
+    console.log('Shutdown app.');
+    process.exit(0);
+  }
+});
