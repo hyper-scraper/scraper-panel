@@ -16,6 +16,10 @@ angular.module('scraper', ['scraper.filters', 'scraper.services', 'scraper.direc
         templateUrl: 'partials/advertisements.html',
         controller: AdvertisementsCtrl
       })
+      .when('/blocked', {
+        templateUrl: 'partials/blocked.html',
+        controller: BlockedCtrl
+      })
       .when('/executions', {
         templateUrl: 'partials/executions.html',
         controller: ExecutionsCtrl

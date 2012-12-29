@@ -1,5 +1,5 @@
 <div class="span8">
-  <h4>Ads</h4>
+  <h4>{{'Advertisements' | i18n}}</h4>
 </div>
 <div class="clearfix"></div>
 <div class="container-fluid">
@@ -7,20 +7,22 @@
     <thead>
     <tr>
       <th>ID</th>
-      <th>Original ID</th>
-      <th>Date</th>
-      <th>Title</th>
-      <th>Description</th>
-      <th>Price</th>
-      <th>Address</th>
-      <th>Landlord phone</th>
-      <th>Landlord name</th>
-      <th>Landlord type</th>
+      <th>{{'Scraper' | i18n}}</th>
+      <th>{{'Original ID' | i18n}}</th>
+      <th>{{'Date' | i18n}}</th>
+      <th>{{'Title' | i18n}}</th>
+      <th>{{'Description' | i18n}}</th>
+      <th>{{'Price' | i18n}}</th>
+      <th>{{'Address' | i18n}}</th>
+      <th>{{'Landlord phone' | i18n}}</th>
+      <th>{{'Landlord name' | i18n}}</th>
+      <th>{{'Landlord type' | i18n}}</th>
     </tr>
     </thead>
     <tbody>
     <tr ng-repeat="ad in ads">
       <td>{{ad.id}}</td>
+      <td><a ng-href="#/scrapers/{{ad.scraper.id}}">#{{ad.scraper.id}}</a></td>
       <td>
         <a target="_blank" ng-href="{{ad.ad_url}}">{{ad.ad_id}}</a>
       </td>

@@ -4,6 +4,9 @@ var async = require('async')
   , EventEmitter = require('events').EventEmitter
   , phantomProxy = require('phantom-proxy')
   , poolModule = require('generic-pool')
+  , log = require('../log')
+  , phantomLogger = log.getLogger('PhantomJS')
+  , poolLogger = log.getLogger('Phantom pool')
   , util = require('util')
   , exec = require('child_process').exec;
 
@@ -60,7 +63,8 @@ BaseScraper.prototype.startPool = function() {
     , min = poolConf.min || 0
     , max = poolConf.max || 5
     , maxIdle = poolConf.idle || 1000
-    , debug = poolConf.debug || false;
+    , debug = poolConf.debug || false
+    , logger = this.getLogger();
 
   //noinspection JSValidateTypes
   this.pool = poolModule.Pool({
@@ -69,6 +73,11 @@ BaseScraper.prototype.startPool = function() {
       phantomProxy.create(
         phantomConf,
         function(proxy) {
+          proxy.page.on('error', function(err) {
+            if (err) {
+              phantomLogger.error('Uncaught error: %s', err);
+            }
+          });
           callback(null, proxy);
         }
       );
@@ -81,10 +90,10 @@ BaseScraper.prototype.startPool = function() {
     min:               min,
     max:               max,
     idleTimeoutMillis: maxIdle,
-    log:               debug
+    log:               debug ? poolLogger : debug
   });
 
-  console.log('Created pool %s for scraper', this.pool.getName());
+  logger.info('Created pool %s for scraper', this.pool.getName());
 };
 
 
@@ -212,6 +221,7 @@ BaseScraper.prototype.run = function() {
  */
 BaseScraper.prototype.openAndRun = function(page, url, code, callback, async) {
   var self = this
+    , logger = this.getLogger()
     , config = this.config
     , externalJQuery = !!config.externalJQuery
     , loaded = false
@@ -221,8 +231,7 @@ BaseScraper.prototype.openAndRun = function(page, url, code, callback, async) {
     , waitTime = minWait + Math.random() * (maxWait - minWait)
     , evaluateFunc = async === true ? page.evaluateAsync : page.evaluate;
 
-
-  console.log('Waiting %dms to open page', Number(waitTime).toFixed(0));
+  logger.debug('Waiting %dms to open page', Number(waitTime).toFixed(0));
   setTimeout(function realOpenAndRun() {
     page.open(url, function(status) {
       if (!loaded) {
@@ -231,7 +240,7 @@ BaseScraper.prototype.openAndRun = function(page, url, code, callback, async) {
         return;
       }
 
-      console.log('Url: %s, status: %s', url, status);
+      logger.info('Url: %s, status: %s', url, status);
       if (externalJQuery) {
         page.includeJs(
           'http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js',
@@ -404,4 +413,20 @@ BaseScraper.prototype.getItemData = function(page, url, callback) {
 };
 
 
-exports.BaseScraper = BaseScraper;
+BaseScraper.prototype.getName = function() {
+  var code = this.constructor.toString();
+  return code.match(/function ([a-z0-9]+)\s*\(/i)[1];
+};
+
+
+BaseScraper.prototype.getLogger = function() {
+  if (!this.__logger) {
+    var name = this.getName();
+    this.__logger = log.getLogger(name);
+  }
+
+  return this.__logger;
+};
+
+
+module.exports = BaseScraper;

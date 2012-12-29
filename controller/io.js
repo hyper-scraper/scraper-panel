@@ -1,6 +1,7 @@
 'use strict';
 
-var scheduler = require('../models/scheduler');
+var logger = require('../models/log')('routes: s.io')
+  , scheduler = require('../models/scheduler');
 
 module.exports = function(app, io) {
   io.sockets.on('connection', function(socket) {
@@ -30,17 +31,17 @@ module.exports = function(app, io) {
   });
 
   scheduler.on('exec:start', function(spec) {
-    console.log('Something started scraping: ', spec);
+    logger.debug('Something started scraping: %s', spec);
     io.sockets.emit('exec:start', spec);
   });
 
   scheduler.on('exec:error', function(err, spec) {
-    console.log('Something had error during scraping: ', err, spec);
+    logger.debug('Something had error during scraping: %s', err, spec);
     io.sockets.emit('exec:error', err, spec);
   });
 
   scheduler.on('exec:finished', function(spec) {
-    console.log('Something finished scraping: ', spec);
+    logger.debug('Something finished scraping: %s', spec);
     io.sockets.emit('exec:finished', spec);
   });
 };

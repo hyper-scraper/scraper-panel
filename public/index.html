@@ -2,7 +2,7 @@
 <html lang="en" ng-app="scraper">
 <head>
   <meta charset="utf-8">
-  <title>Scraper</title>
+  <title>\{{'Scraper panel' | i18n}}</title>
   <!-- Bootstrap -->
   <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
   <link rel="stylesheet" href="css/app.css"/>
@@ -12,9 +12,10 @@
 
 
   <nav>
-    <a href="#/scrapers">Main</a>
-    <a href="#/advertisements">Advertisements</a>
-    <a href="#/executions">Executions</a>
+    <a href="#/scrapers">\{{'Main' | i18n}}</a>
+    <a href="#/advertisements">\{{'Advertisements' | i18n}}</a>
+    <a href="#/blocked" class="blocked">\{{'Blocked' | i18n}}</a>
+    <a href="#/executions">\{{'Executions' | i18n}}</a>
   </nav>
   <div ng-view></div>
 
@@ -23,6 +24,7 @@
   -->
   <script src="lib/angular/angular.js"></script>
   <script src="lib/angular/angular-resource.js"></script>
+  <script src="js/i18n/{{lang}}.js"></script>
   <script src="js/app.js"></script>
   <script src="js/services.js"></script>
   <script src="js/controllers.js"></script>

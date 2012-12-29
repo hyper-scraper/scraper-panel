@@ -1,5 +1,5 @@
 <div class="span8">
-  <h4>Executions</h4>
+  <h4>{{'Executions' | i18n}}</h4>
 </div>
 <div class="clearfix"></div>
 <div class="container-fluid">
@@ -17,7 +17,9 @@
     <tbody>
     <tr ng-repeat="exec in executions">
       <td>{{exec.id}}</td>
-      <td>{{exec.scraper.name}}</td>
+      <td>
+        <a ng-href="#/scrapers/{{exec.scraper.id}}">#{{exec.scraper.id}}</a>
+      </td>
       <td>{{exec.start_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
       <td>{{exec.finish_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
       <td>{{exec.records}}</td>

@@ -1,8 +1,9 @@
 'use strict';
 
 var EventEmitter = require('events').EventEmitter
-  , util = require('util')
+  , logger = require('./log')('Scheduler')
   , scrapers = require('./scrapers')
+  , util = require('util')
   , config = require('../config').scrapers;
 
 
@@ -60,7 +61,7 @@ Scheduler.prototype.scheduleScraping = function() {
         spec._tm = setTimeout(spec.run, conf.interval);
       });
 
-    console.log(
+    logger.info(
       'Scheduling %s scraper to run each %dms with timeout: %dms',
       conf.type,
       conf.interval,

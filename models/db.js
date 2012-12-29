@@ -1,6 +1,7 @@
 'use strict';
 
-var Mapper = require('mapper')
+var logger = require('./log')('mapper')
+  , Mapper = require('mapper')
   , mysql = require('mapper/node_modules/mysql-libmysqlclient')
   , config = require('../config').db
   , Advertisement
@@ -10,7 +11,8 @@ var Mapper = require('mapper')
 
 Mapper.connect(config, {
   verbose: config.verbose,
-  strict: false
+  strict: false,
+  logger: logger
 });
 
 Advertisement = Mapper.map('advertisements');

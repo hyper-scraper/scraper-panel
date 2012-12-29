@@ -1,0 +1,33 @@
+<div class="span8">
+  <h4>{{'Scrapers statistics' | i18n}}</h4>
+</div>
+<div class="clearfix"></div>
+<div class="block">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{'ID' | i18n}}</th>
+        <th>{{'Name' | i18n}}</th>
+        <th>{{'Status' | i18n}}</th>
+        <th>{{'Last execution' | i18n}}</th>
+        <th>{{'Last result' | i18n}}</th>
+        <th>{{'Next execution' | i18n}}</th>
+        <th>{{'Actions' | i18n}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="scraper in scrapers">
+        <td>{{scraper.id}}</td>
+        <td>{{scraper.name}}</td>
+        <td>{{scraper.status}}</td>
+        <td>{{scraper.last_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+        <td>{{scraper.last_result}}</td>
+        <td>{{scraper.next_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+        <td>
+          <a href="#/scrapers/{{scraper.id}}">{{'Details' | i18n}}</a>
+          <a ng-click="runNow(scraper);">{{'Run now!' | i18n}}</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

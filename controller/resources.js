@@ -36,13 +36,13 @@ module.exports = function(app) {
        .where({id: req.sid})
        .load('advertisements', function(a) {
          a
-           .select('create_time, ad_title, ad_landlord_phone, ad_id, ad_city, ad_price, ad_url')
+           .select('id, create_time, ad_title, ad_landlord_phone, ad_id, ad_city, ad_price, ad_url, error')
            .order('id DESC')
            .page(0, 5);
        })
        .load('executions', function(e) {
          e
-           .select('start_time, finish_time, records')
+           .select('id, start_time, finish_time, records, error')
            .order('id DESC')
            .page(0, 5);
        })
@@ -97,11 +97,25 @@ module.exports = function(app) {
   app.get('/api/advertisements', function(req, res, next) {
     var page = parseInt(req.params.page) || 0;
     Advertisement
-      .select('id, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
+      .select('id, sid, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
+      .where({blocked: 0})
       .order('id DESC')
       .page(page, 10)
       .load('scraper', function(s) {
-        s.select('name');
+        s.select('scrapers.id as id');
+      })
+      .all(errorOrData(res, next));
+  });
+
+  app.get('/api/blocked', function(req, res, next) {
+    var page = parseInt(req.params.page) || 0;
+    Advertisement
+      .select('id, sid, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
+      .where({blocked: 1})
+      .order('id DESC')
+      .page(page, 10)
+      .load('scraper', function(s) {
+        s.select('scrapers.id as id');
       })
       .all(errorOrData(res, next));
   });
@@ -109,9 +123,12 @@ module.exports = function(app) {
   app.get('/api/executions', function(req, res, next) {
     var page = parseInt(req.params.page) || 0;
     Execution
-      .select('*')
+      .select('id, sid, start_time, finish_time, records, error')
       .order('id DESC')
       .page(page, 10)
+      .load('scraper', function(s) {
+        s.select('scrapers.id as id');
+      })
       .all(errorOrData(res, next));
   });
 };

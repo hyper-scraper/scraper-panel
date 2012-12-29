@@ -1,7 +1,7 @@
 'use strict';
 
 var async = require('async')
-  , BaseScraper = require('../base-scraper').BaseScraper
+  , BaseScraper = require('./base-scraper')
   , db = require('../db')
   , http = require('http')
   , Advertisement = db.Advertisement
@@ -18,7 +18,9 @@ var async = require('async')
 function AvitoScraper(options) {
   BaseScraper.call(this, options);
 
-  var self = this;
+  var self = this
+    , logger = this.getLogger();
+
   this.config.externalJQuery = options.externalJQuery || false;
   this.config.BASE_URL = 'http://www.avito.ru';
 
@@ -39,7 +41,7 @@ function AvitoScraper(options) {
       .exec(function(err) {
         delete self.started;
         if (err) {
-          console.error('Error occurred during execution creation: %s', err);
+          logger.error('Error occurred during execution creation: %s', err);
         }
       });
   });
@@ -59,7 +61,7 @@ function AvitoScraper(options) {
           if (Array.isArray(item)) {
             item = {
               ad_url: item[0],
-              error: item[1].stack ? item[1].stack : item[1]
+              error:  item[1].stack ? item[1].stack : item[1]
             };
           }
 
@@ -70,7 +72,7 @@ function AvitoScraper(options) {
             .insert(item)
             .exec(function(err) {
               if (err) {
-                console.error('Error occurred during ad creation: %s', err);
+                logger.error('Error occurred during ad creation: %s', err);
               }
               cb();
             })
@@ -137,6 +139,7 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
       callback(err);
     }
   }
+
   page.once('error', onError);
 
   this.openAndRun(page, url,
@@ -275,10 +278,10 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
 
             var req = http.request({
               hostname: 'liberitas.info',
-              port: 3001,
-              path: '/run-ocr?' + query,
-              method: 'POST',
-              headers: {
+              port:     3001,
+              path:     '/run-ocr?' + query,
+              method:   'POST',
+              headers:  {
                 'Content-type': 'application/json'
               }
             }, function(res) {
@@ -310,10 +313,10 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
             var phone = data.ad_landlord_phone;
             var req = http.request({
               hostname: '85.25.148.30',
-              port: 3000,
-              path: '/query',
-              method: 'POST',
-              headers: {
+              port:     3000,
+              path:     '/query',
+              method:   'POST',
+              headers:  {
                 'Content-type': 'application/json'
               }
             }, function(res) {
@@ -326,10 +329,9 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
               res.on('end', function() {
                 var response = JSON.parse(json);
                 if (response.shift() === phone) {
-                  asyncCallback('do-not-add');
-                } else {
-                  asyncCallback();
+                  data.blocked = true;
                 }
+                asyncCallback();
               });
             });
             req.write(JSON.stringify([phone]));
@@ -386,14 +388,15 @@ AvitoScraper.prototype.filterList = function(list, callback) {
     .select('ad_url')
     .order('id DESC')
     .where({ad_url: list, error: null})
-    .one(function(err, data) {
+    .all(function(err, data) {
       var filtered;
-      if (!data) {
-        filtered = list;
-      } else {
-        var idx = list.indexOf(data.ad_url);
-        filtered = list.slice(0, idx);
-      }
+      data.forEach(function(item) {
+        var idx = list.indexOf(item.ad_url);
+        if (idx !== -1) {
+          list.splice(idx, 1);
+        }
+      });
+      filtered = list;
 
       if (config.limit && config.limit < filtered.length) {
         filtered = filtered.slice(filtered.length - config.limit);

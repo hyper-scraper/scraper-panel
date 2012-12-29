@@ -1,0 +1,40 @@
+<div class="span8">
+  <h4>{{'Blocked advertisements' | i18n}}</h4>
+</div>
+<div class="clearfix"></div>
+<div class="container-fluid">
+  <table class="table table-ads table-bordered table-striped">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>{{'Scraper' | i18n}}</th>
+      <th>{{'Original ID' | i18n}}</th>
+      <th>{{'Date' | i18n}}</th>
+      <th>{{'Title' | i18n}}</th>
+      <th>{{'Description' | i18n}}</th>
+      <th>{{'Price' | i18n}}</th>
+      <th>{{'Address' | i18n}}</th>
+      <th>{{'Landlord phone' | i18n}}</th>
+      <th>{{'Landlord name' | i18n}}</th>
+      <th>{{'Landlord type' | i18n}}</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="bad in blocked">
+      <td>{{bad.id}}</td>
+      <td><a ng-href="#/scrapers/{{bad.scraper.id}}">#{{bad.scraper.id}}</a></td>
+      <td>
+        <a target="_blank" ng-href="{{bad.ad_url}}">{{bad.ad_id}}</a>
+      </td>
+      <td>{{bad.create_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+      <td>{{bad.ad_title}}</td>
+      <td>{{bad.ad_description}}</td>
+      <td>{{bad.ad_price}} {{bad.ad_price_type}}</td>
+      <td>{{bad.ad_city}}</td>
+      <td>{{bad.ad_landlord_phone}}</td>
+      <td>{{bad.ad_landlord_name}}</td>
+      <td>{{bad.ad_landlord_type | landlord_type}}</td>
+    </tr>
+    </tbody>
+  </table>
+</div>

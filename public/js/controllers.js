@@ -1,14 +1,18 @@
 'use strict';
 
 
-function MainCtrl($scope, Scraper, socket) {
+function MainCtrl($scope, Scraper, socket, $notifications, i18n) {
   var self = this;
   $scope.scrapers = Scraper.query(function() {
     self.initSockets($scope, socket);
   });
 
   $scope.runNow = function(scraper) {
-    socket.emit('scheduler:run-now', scraper.id);
+    if (scraper.status === 'working') {
+      $notifications.showNotification(i18n.t('Scraper is already working.'));
+    } else {
+      socket.emit('scheduler:run-now', scraper.id);
+    }
   };
 
   this.getScraper = function(id) {
@@ -46,19 +50,16 @@ MainCtrl.prototype.initSockets = function($scope, socket) {
   });
 
   socket.on('exec:start', function(spec) {
-    console.log(['Started', spec]);
     var scraper = self.getScraper(spec.sid);
     self.setScraperData(scraper, spec);
   });
 
   socket.on('exec:error', function(err, spec) {
-    console.log(['Error', err, spec]);
     var scraper = self.getScraper(spec.sid);
     self.setScraperData(scraper, spec);
   });
 
   socket.on('exec:finished', function(spec) {
-    console.log(['Finished', spec]);
     var scraper = self.getScraper(spec.sid);
     self.setScraperData(scraper, spec);
   });
@@ -70,6 +71,10 @@ function ScraperCtrl($scope, $routeParams, Scraper) {
 
 function AdvertisementsCtrl($scope, Advertisement) {
   $scope.ads = Advertisement.query();
+}
+
+function BlockedCtrl($scope, Blocked) {
+  $scope.blocked = Blocked.query();
 }
 
 function ExecutionsCtrl($scope, Execution) {
