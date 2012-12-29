@@ -13,6 +13,7 @@
     "generic-pool":    "2.0.2",
     "handlebars":      "1.0.7",
     "less-middleware": "0.1.9",
+    "log4js":          "0.5.6",
     "mapper":          "0.2.2-pre",
     "phantom-proxy":   "latest",
     "socket.io":       "0.9.13"
