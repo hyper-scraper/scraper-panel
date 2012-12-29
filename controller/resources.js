@@ -107,7 +107,7 @@ module.exports = function(app) {
       .all(errorOrData(res, next));
   });
 
-  app.get('/api/blocked', function(req, res, next) {
+  app.get('/api/advertisements/blocked', function(req, res, next) {
     var page = parseInt(req.params.page) || 0;
     Advertisement
       .select('id, sid, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
