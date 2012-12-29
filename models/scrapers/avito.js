@@ -2,11 +2,25 @@
 
 var async = require('async')
   , BaseScraper = require('./base-scraper')
+  , crypto = require('crypto')
   , db = require('../db')
   , http = require('http')
   , Advertisement = db.Advertisement
   , Execution = db.Execution
-  , util = require('util');
+  , util = require('util')
+  , __slice = [].slice;
+
+
+/**
+ * Make SHA-1 hash
+ */
+function sha1() {
+  var args = __slice.call(arguments, 0);
+  return crypto
+    .createHash('sha1')
+    .update(args.join(''), 'utf8')
+    .digest('hex');
+}
 
 
 /**
@@ -67,6 +81,7 @@ function AvitoScraper(options) {
 
           item.sid = self.config.SID;
           item.eid = res.insertId;
+          item.checksum = sha1(item.sid, ':', item.ad_url);
 
           Advertisement
             .insert(item)

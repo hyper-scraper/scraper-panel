@@ -152,7 +152,19 @@ BaseScraper.prototype.run = function() {
 
     // filter out
     function(list, cb) {
-      self.filterList(list, cb);
+      var nodups = [];
+      list.forEach(function(url) {
+        if (nodups.indexOf(url) === -1) {
+          nodups.push(url);
+        }
+      });
+
+      // freeing old array
+      while (list.shift()) {
+        void(0);
+      }
+
+      self.filterList(nodups, cb);
     },
 
     // get data
