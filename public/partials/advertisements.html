@@ -1,9 +1,8 @@
-<div class="span8">
+<div class="block bottom_margin_small">
   <h4>{{'Advertisements' | i18n}}</h4>
 </div>
-<div class="clearfix"></div>
-<div class="container-fluid">
-  <table class="table table-ads table-bordered table-striped">
+<div class="block">
+  <table class="table">
     <thead>
     <tr>
       <th>ID</th>
@@ -21,19 +20,21 @@
     </thead>
     <tbody>
     <tr ng-repeat="ad in ads">
-      <td>{{ad.id}}</td>
-      <td><a ng-href="#/scrapers/{{ad.scraper.id}}">#{{ad.scraper.id}}</a></td>
-      <td>
+      <td width="3%">
+        <a href="#/advertisements/{{ad.id}}">#{{ad.id}}</a>
+      </td>
+      <td width="3%"><a ng-href="#/scrapers/{{ad.scraper.id}}">#{{ad.scraper.id}}</a></td>
+      <td width="7%">
         <a target="_blank" ng-href="{{ad.ad_url}}">{{ad.ad_id}}</a>
       </td>
-      <td>{{ad.create_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
-      <td>{{ad.ad_title}}</td>
-      <td>{{ad.ad_description}}</td>
-      <td>{{ad.ad_price}} {{ad.ad_price_type}}</td>
-      <td>{{ad.ad_city}}</td>
-      <td>{{ad.ad_landlord_phone}}</td>
-      <td>{{ad.ad_landlord_name}}</td>
-      <td>{{ad.ad_landlord_type | landlord_type}}</td>
+      <td width="10%">{{ad.create_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+      <td width="10%">{{ad.ad_title}}</td>
+      <td >{{ad.ad_description | fixed:128}}</td>
+      <td width="10%">{{ad.ad_price}} {{ad.ad_price_type}}</td>
+      <td width="10%">{{ad.ad_city}}</td>
+      <td width="7%" >{{ad.ad_landlord_phone}}</td>
+      <td width="10%">{{ad.ad_landlord_name}}</td>
+      <td widht="10%">{{ad.ad_landlord_type | landlord_type}}</td>
     </tr>
     </tbody>
   </table>

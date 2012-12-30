@@ -6,15 +6,19 @@ angular.module('scraper', ['scraper.filters', 'scraper.services', 'scraper.direc
     $routeProvider
       .when('/scrapers', {
         templateUrl: 'partials/main.html',
-        controller: MainCtrl
+        controller: ScrapersCtrl
       })
-      .when('/scrapers/:sId', {
+      .when('/scrapers/:id', {
         templateUrl: 'partials/scraper.html',
         controller: ScraperCtrl
       })
       .when('/advertisements', {
         templateUrl: 'partials/advertisements.html',
         controller: AdvertisementsCtrl
+      })
+      .when('/advertisements/:id', {
+        templateUrl: 'partials/ad.html',
+        controller: AdvertisementCtrl
       })
       .when('/blocked', {
         templateUrl: 'partials/blocked.html',
@@ -23,6 +27,10 @@ angular.module('scraper', ['scraper.filters', 'scraper.services', 'scraper.direc
       .when('/executions', {
         templateUrl: 'partials/executions.html',
         controller: ExecutionsCtrl
+      })
+      .when('/executions/:id', {
+        templateUrl: 'partials/exec.html',
+        controller: ExecutionCtrl
       })
       .otherwise({
         redirectTo: '/scrapers'

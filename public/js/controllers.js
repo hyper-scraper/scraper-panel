@@ -1,15 +1,31 @@
 'use strict';
 
 
-function MainCtrl($scope, Scraper, socket, $notifications, i18n) {
+/**
+ * Main application controller
+ *
+ * @param $scope
+ *    Controller scope
+ * @constructor
+ */
+function MainCtrl($scope, $log) {
+   $scope.$on('ajax:loading', function(e, loading) {
+     $scope.ajaxLoading = loading;
+   });
+}
+
+
+
+
+function ScrapersCtrl($scope, ScraperDAO, socket, $notifications, i18n) {
   var self = this;
-  $scope.scrapers = Scraper.query(function() {
+  $scope.scrapers = ScraperDAO.query(function() {
     self.initSockets($scope, socket);
   });
 
   $scope.runNow = function(scraper) {
     if (scraper.status === 'working') {
-      $notifications.showNotification(i18n.t('Scraper is already working.'));
+      $notifications.show(i18n.t('Scraper is already working.'));
     } else {
       socket.emit('scheduler:run-now', scraper.id);
     }
@@ -35,7 +51,15 @@ function MainCtrl($scope, Scraper, socket, $notifications, i18n) {
   };
 }
 
-MainCtrl.prototype.initSockets = function($scope, socket) {
+/**
+ * Initiate socket.io listeners
+ *
+ * @param $scope
+ *    Controller scope
+ * @param socket
+ *    Socket.io Angular service
+ */
+ScrapersCtrl.prototype.initSockets = function($scope, socket) {
   var self = this;
 
   socket.emit('scheduler:tasks', {}, function(tasks) {
@@ -65,18 +89,134 @@ MainCtrl.prototype.initSockets = function($scope, socket) {
   });
 };
 
-function ScraperCtrl($scope, $routeParams, Scraper) {
-  $scope.scraper = Scraper.get({sId: $routeParams.sId});
+
+
+
+/**
+ * Scraper view controller
+ *
+ * @param $scope
+ *    Controller scope
+ * @param $routeParams
+ *    $routeParams instance
+ * @param ScraperDAO
+ *    Scraper entity
+ * @constructor
+ */
+function ScraperCtrl($scope, $routeParams, ScraperDAO) {
+  $scope.scraper = ScraperDAO.get({id: $routeParams.id});
 }
 
-function AdvertisementsCtrl($scope, Advertisement) {
-  $scope.ads = Advertisement.query();
+
+
+
+/**
+ * Base class for controllers working with resources
+ *
+ * @param $scope
+ *    Scope of controller
+ * @param DAO
+ *    $resource instance
+ * @param dataProperty
+ *    Property name for collection
+ * @constructor
+ */
+function ResourceCtrl($scope, DAO, dataProperty) {
+  dataProperty = dataProperty || 'data';
+
+  this.update = function() {
+    $scope.$emit('ajax:loading', true);
+    $scope[dataProperty] = DAO.query(function() {
+      $scope.$emit('ajax:loading', false);
+    });
+  };
+
+  this.update();
 }
 
-function BlockedCtrl($scope, Blocked) {
-  $scope.blocked = Blocked.query();
+
+
+
+/**
+ * Advertisement resource controller
+ *
+ * @param $scope
+ *    Controller scope
+ * @param AdvertisementDAO
+ *    Advertisement resource model
+ * @constructor
+ */
+function AdvertisementsCtrl($scope, AdvertisementDAO) {
+  ResourceCtrl.call(this, $scope, AdvertisementDAO, 'ads');
+}
+inherits(AdvertisementsCtrl, ResourceCtrl);
+
+
+
+
+/**
+ * Advertisement view controller
+ *
+ * @param $scope
+ *    Controller scope
+ * @param $routeParams
+ *    $routeParams instance
+ * @param AdvertisementDAO
+ *    Advertisement entity
+ * @constructor
+ */
+function AdvertisementCtrl($scope, $routeParams, AdvertisementDAO) {
+  $scope.ad = AdvertisementDAO.get({id: $routeParams.id});
 }
 
-function ExecutionsCtrl($scope, Execution) {
-  $scope.executions = Execution.query();
+
+
+
+/**
+ * Blocked resource controller
+ *
+ * @param $scope
+ *    Controller scope
+ * @param BlockedDAO
+ *    Blocked resource model
+ * @constructor
+ */
+function BlockedCtrl($scope, BlockedDAO) {
+  ResourceCtrl.call(this, $scope, BlockedDAO, 'blocked');
+}
+inherits(ExecutionsCtrl, ResourceCtrl);
+
+
+
+
+/**
+ * Execution resource controller
+ *
+ * @param $scope
+ *    Controller scope
+ * @param ExecutionDAO
+ *    Execution resource model
+ * @constructor
+ */
+function ExecutionsCtrl($scope, ExecutionDAO) {
+  ResourceCtrl.call(this, $scope, ExecutionDAO, 'executions');
+}
+inherits(ExecutionsCtrl, ResourceCtrl);
+
+
+
+
+/**
+ * Execution view controller
+ *
+ * @param $scope
+ *    Controller scope
+ * @param $routeParams
+ *    $routeParams instance
+ * @param ExecutionDAO
+ *    ExecutionDAO entity
+ * @constructor
+ */
+function ExecutionCtrl($scope, $routeParams, ExecutionDAO) {
+  $scope.exec = ExecutionDAO.get({id: $routeParams.id});
 }

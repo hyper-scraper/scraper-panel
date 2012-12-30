@@ -3,39 +3,23 @@
 
 angular
   .module('scraper.services', ['ngResource', 'i18n'])
-  .factory('Scraper', function($resource) {
-    return $resource(
-      '/api/scrapers/:sId',
-      {
-        sId: '@id'
-      }
-    );
+
+  // DAO providers
+  .factory('ScraperDAO', function($resource) {
+    return $resource('/api/scrapers/:id', {id: '@id'});
   })
-  .factory('Advertisement', function($resource) {
-    return $resource(
-      '/api/advertisements/:aId',
-      {
-        aId: '@id'
-      }
-    );
+  .factory('AdvertisementDAO', function($resource) {
+    return $resource('/api/advertisements/:id', {id: '@id'});
   })
-  .factory('Blocked', function($resource) {
-    return $resource(
-      '/api/advertisements/blocked/:bId',
-      {
-        bId: '@id'
-      }
-    );
+  .factory('BlockedDAO', function($resource) {
+    return $resource('/api/advertisements/blocked/:id', {id: '@id'});
   })
-  .factory('Execution', function($resource) {
-    return $resource(
-      '/api/executions/:eId',
-      {
-        eId: '@id'
-      }
-    );
+  .factory('ExecutionDAO', function($resource) {
+    return $resource('api/executions/:id', {id: '@id'});
   })
-  .factory('socket', function($rootScope) {
+
+
+  .service('socket', function($rootScope) {
     var socket = io.connect();
     return {
       on:   function(eventName, callback) {
@@ -58,7 +42,7 @@ angular
       }
     };
   })
-  .factory('i18n', function(_translation) {
+  .service('i18n', function(_translation) {
     return {
       t: function(str) {
         if (_translation.hasOwnProperty(str)) {
@@ -69,26 +53,41 @@ angular
       }
     }
   })
-  .factory('$notifications', function($log, i18n) {
-    return {
-      showNotification: function(msg) {
-        var notifications = window.webkitNotifications;
-        if (!notifications) {
-          $log.warn(i18n.t('Desktop notifications are not supported. :P'));
-        } else if (notifications.checkPermission()) {
-          notifications.requestPermission();
-        } else {
-          var notification = notifications.createNotification(
-            'img/logo-64.png',
-            i18n.t('Scraper Panel'),
-            msg
-          );
+  .service('$notifications', function($log, i18n) {
+    var service = window.webkitNotifications;
 
-          notification.show();
-          setTimeout(function() {
-            notification.close();
-          }, 1000);
-        }
+    if (!service) {
+      $log.warn(i18n.t('Desktop notifications are not supported. :P'));
+    }
+
+    this.isSupported = !!service;
+    this._check = function() {
+      if (!this.isSupported) {
+        return false;
+      } else if (service.checkPermission()) {
+        service.requestPermission();
+        return false;
+      } else {
+        return true;
+      }
+    };
+
+    this._create = function(title, msg) {
+      var n;
+      n = service.createNotification('img/logo-64.png', title, msg);
+      n.ondisplay = function() {
+        setTimeout(function() {
+          n.close();
+        }, 1000);
+      };
+
+      return n;
+    };
+
+    this.show = function(msg) {
+      if (this._check()) {
+        var title = i18n.t('Scraper Panel');
+        this._create(title, msg).show();
       }
     };
   });

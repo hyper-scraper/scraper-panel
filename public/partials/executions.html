@@ -1,29 +1,30 @@
-<div class="span8">
+<div class="block bottom_margin_small">
   <h4>{{'Executions' | i18n}}</h4>
 </div>
-<div class="clearfix"></div>
-<div class="container-fluid">
-  <table class="table table-ads table-bordered table-striped">
+<div class="block">
+  <table class="table">
     <thead>
     <tr>
-      <th>ID</th>
-      <th>Scraper</th>
-      <th>Start time</th>
-      <th>Finish time</th>
-      <th>Fetched records</th>
-      <th>Error</th>
+      <th>{{'ID' | i18n}}</th>
+      <th>{{'Scraper' | i18n}}</th>
+      <th>{{'Start time' | i18n}}</th>
+      <th>{{'Finish time' | i18n}}</th>
+      <th>{{'# of records' | i18n}}</th>
+      <th>{{'Error' | i18n}}</th>
     </tr>
     </thead>
     <tbody>
     <tr ng-repeat="exec in executions">
-      <td>{{exec.id}}</td>
-      <td>
-        <a ng-href="#/scrapers/{{exec.scraper.id}}">#{{exec.scraper.id}}</a>
+      <td width="10%">
+        <a href="#/executions/{{exec.id}}">#{{exec.id}}</a>
       </td>
-      <td>{{exec.start_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
-      <td>{{exec.finish_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
-      <td>{{exec.records}}</td>
-      <td>{{exec.error}}</td>
+      <td width="10%">
+        <a ng-href="#/scrapers/{{exec.scraper.id}}">#{{exec.sid}}</a>
+      </td>
+      <td width="20%">{{exec.start_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+      <td width="20%">{{exec.finish_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+      <td width="20%">{{exec.records}}</td>
+      <td width="20%">{{exec.error}}</td>
     </tr>
     </tbody>
   </table>

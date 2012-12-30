@@ -18,4 +18,24 @@ angular
     return function(val) {
       return i18n.t(val);
     };
+  })
+  .filter('na', function() {
+    return function(val) {
+      if (!!val) {
+        return val;
+      } else {
+        return 'N/A';
+      }
+    }
+  })
+  .filter('fixed', function() {
+    return function(val, length) {
+      if (!val) {
+        return '';
+      } else if (val.length < length - 3) {
+        return val;
+      } else {
+        return val.substring(0, length - 3).trim() + '...';
+      }
+    };
   });

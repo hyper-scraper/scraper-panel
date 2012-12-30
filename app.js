@@ -14,18 +14,26 @@ var engines = require('consolidate')
     'log level': sioLevel
   });
 
-app.configure('development', function() {
-  app.set('port', process.env.PORT || 3000);
+app.configure(function() {
   app.engine('html', engines.handlebars);
   app.set('view engine', 'html');
-  app.set('view cache', true);
   app.set('views', path.join(__dirname, '/public'));
-  app.use(express.logger('dev'));
   app.use(express.query());
   app.use(app.router);
   app.use(require('less-middleware')({ src: __dirname + '/public' }));
   app.use(express.static(path.join(__dirname, 'public')));
+});
+
+app.configure('development', function() {
+  app.set('port', 3000);
+  app.set('view cache', false);
+  app.use(express.logger('dev'));
   app.use(express.errorHandler());
+});
+
+app.configure('production', function() {
+  app.set('port', process.env.PORT);
+  app.set('view cache', true);
 });
 
 require('./controller')(app, io);

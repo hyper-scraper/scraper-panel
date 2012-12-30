@@ -1,0 +1,46 @@
+<div class="block bottom_margin_mid">
+  <h4>{{'Execution #'|i18n}}{{exec.id}}</h4>
+</div>
+<div class=" block bottom_margin_large">
+  <ul class="details ">
+    <li><span>{{'Scraper'|i18n}}:</span>
+      <a ng-href="#/scrapers/{{exec.sid}}">{{exec.sid}}</a>
+    </li>
+    <li><span>{{'Start time'|i18n}}:</span>{{exec.start_time | date:'dd.MM.yyyy HH:mm:ss'}}</li>
+    <li><span>{{'Finish time' | i18n}}:</span>{{exec.finish_time | date:'dd.MM.yyyy HH:mm:ss'}}</li>
+    <li><span>{{'Fetched records' | i18n}}:</span>{{exec.records}}</li>
+    <li><span>{{'Error' | i18n}}:</span>{{exec.error | na}}</li>
+  </ul>
+</div>
+
+<div class="block">
+  <h5>{{'Fetched records' | i18n}}</h5>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>{{'Original ID' | i18n}}</th>
+        <th>{{'Date' | i18n}}</th>
+        <th>{{'Price' | i18n}}</th>
+        <th>{{'Landlord phone' | i18n}}</th>
+        <th>{{'Landlord name' | i18n}}</th>
+        <th>{{'Landlord type' | i18n}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="ad in exec.advertisements">
+        <td width="5%">
+          <a href="#/advertisements/{{ad.id}}">#{{ad.id}}</a>
+        </td>
+        <td width="5%">
+          <a target="_blank" ng-href="{{ad.ad_url}}">{{ad.ad_id}}</a>
+        </td>
+        <td width="18%">{{ad.create_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+        <td width="18%">{{ad.ad_price}} {{ad.ad_price_type}}</td>
+        <td width="18%">{{ad.ad_landlord_phone | na}}</td>
+        <td width="18%">{{ad.ad_landlord_name}}</td>
+        <td width="18%"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

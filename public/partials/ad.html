@@ -1,0 +1,29 @@
+<div class="block bottom_margin_mid">
+  <h4>{{'Ad #'|i18n}}{{ad.id}}</h4>
+</div>
+<div class=" block pull-right">
+  <em ng-hide="ad.ad_picture">No photo</em>
+  <img ng-show="ad.ad_picture" ng-src="{{ad.ad_picture}}" alt="" />
+</div>
+<div class=" block bottom_margin_large">
+  <ul class="details ">
+    <li><span>{{'Scraper'|i18n}}:</span>
+      <a ng-href="#/scrapers/{{ad.sid}}">{{ad.sid}}</a>
+    </li>
+    <li><span>{{'Execution'|i18n}}:</span>
+      <a ng-href="#/executions/{{ad.eid}}">{{ad.eid}}</a>
+    </li>
+    <li><span>{{'Original ID'|i18n}}:</span>
+      <a ng-href="{{ad.ad_url}}">{{ad.ad_id}}</a>
+    </li>
+    <li><span>{{'Title'|i18n}}:</span> {{ad.ad_title}}</li>
+    <li><span>{{'Price' | i18n}}:</span> {{ad.ad_price}} {{ad.ad_price_type}}</li>
+    <li><span>{{'Address' | i18n}}:</span> {{ad.ad_city}}</li>
+    <li><span>{{'Landlord phone' | i18n}}:</span> {{ad.ad_landlord_phone}}</li>
+    <li><span>{{'Landlord name' | i18n}}:</span> {{ad.ad_landlord_name}}</li>
+    <li><span>{{'Landlord type' | i18n}}:</span> {{ad.ad_landlord_type | landlord_type}}</li>
+    <li><br />{{ad.ad_description}}</li>
+  </ul>
+
+
+</div>

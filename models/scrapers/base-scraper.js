@@ -425,12 +425,22 @@ BaseScraper.prototype.getItemData = function(page, url, callback) {
 };
 
 
+/**
+ * Get class name of scraper
+ *
+ * @return {String}
+ */
 BaseScraper.prototype.getName = function() {
   var code = this.constructor.toString();
   return code.match(/function ([a-z0-9]+)\s*\(/i)[1];
 };
 
 
+/**
+ * Get logger associated with scraper
+ *
+ * @return {Logger}
+ */
 BaseScraper.prototype.getLogger = function() {
   if (!this.__logger) {
     var name = this.getName();
@@ -438,6 +448,36 @@ BaseScraper.prototype.getLogger = function() {
   }
 
   return this.__logger;
+};
+
+
+/**
+ * Render image to PNG and return image data Base64 encoded string
+ *
+ * @param {*} page
+ *    PhantomJS webpage proxy
+ * @param {String} fmt
+ *    Type of image: png, jpg, ...
+ * @param {*} coords
+ *    Box coordinates to render (top, left, width, height)
+ * @param {Function} callback
+ *    Function taking (err, imageBuffer)
+ * @protected
+ */
+BaseScraper.prototype._renderImage = function(page, fmt, coords, callback) {
+  var buf = null;
+  try {
+    page.set('clipRect', coords, function() {
+      page.renderBase64(fmt, function(imageData) {
+        buf = new Buffer(imageData, 'base64');
+        callback(null, buf);
+      });
+    });
+  } catch(ex) {
+    if (!buf) {
+      callback(ex);
+    }
+  }
 };
 
 

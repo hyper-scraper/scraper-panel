@@ -2,7 +2,8 @@
 
 var Advertisement = require('../models/db').Advertisement
   , Execution = require('../models/db').Execution
-  , Scraper = require('../models/db').Scraper;
+  , Scraper = require('../models/db').Scraper
+  , async = require('async');
 
 
 function setSid(req, res, next) {
@@ -31,66 +32,35 @@ module.exports = function(app) {
   });
 
   app.get('/api/scrapers/:id', setSid, function(req, res, next) {
-     Scraper
-       .select('*')
-       .where({id: req.sid})
-       .load('advertisements', function(a) {
-         a
-           .select('id, create_time, ad_title, ad_landlord_phone, ad_id, ad_city, ad_price, ad_url, error')
-           .order('id DESC')
-           .page(0, 5);
-       })
-       .load('executions', function(e) {
-         e
-           .select('id, start_time, finish_time, records, error')
-           .order('id DESC')
-           .page(0, 5);
-       })
-       .one(errorOrData(res, next));
-  });
+    Scraper
+      .select('id, name')
+      .where({id: req.sid})
+      .one(function(err, data) {
+        if (err) return next(err);
+        async.waterfall([
+          function(cb) {
+            Advertisement
+              .select('id, create_time, ad_landlord_name, ad_landlord_phone, ad_landlord_type, ad_id, ad_price, ad_price_type, ad_url, error')
+              .where({sid: req.sid})
+              .limit('0, 5')
+              .order('id DESC')
+              .all(cb);
+          },
+          function(ads, cb) {
+            data.advertisements = ads;
 
-  app.get('/api/scrapers/:id/executions', setSid, function(req, res, next) {
-    var page = parseInt(req.params.page) || 0;
-    Execution
-      .where({sid: req.sid})
-      .order('id DESC')
-      .page(page, 5)
-      .all(errorOrData(res, next));
-  });
-
-  app.get('/api/scrapers/:id/executions/count', setSid, function(req, res, next) {
-    Execution
-      .select('COUNT(*) AS count')
-      .where({sid: req.sid})
-      .all(function(err, data) {
-        if (err) {
-          next(err);
-        } else {
-          res.send(200, data[0]);
-        }
-      });
-  });
-
-  app.get('/api/scrapers/:id/advertisements', setSid, function(req, res, next) {
-    var page = parseInt(req.params.page) || 0;
-    Advertisement
-      .select('*')
-      .where({sid: req.sid})
-      .order('id DESC')
-      .page(page, 10)
-      .all(errorOrData(res, next));
-  });
-
-  app.get('/api/scrapers/:id/advertisements/count', setSid, function(req, res, next) {
-    Advertisement
-      .select('COUNT(*) AS count')
-      .where({sid: req.sid})
-      .all(function(err, data) {
-        if (err) {
-          next(err);
-        } else {
-          res.send(200, data[0]);
-        }
+            Execution
+              .select('id, start_time, finish_time, records, error')
+              .where({sid: req.sid})
+              .limit('0, 5')
+              .order('id DESC')
+              .all(cb);
+          }
+        ], function(err, execs) {
+          if (err) return next(err);
+          data.executions = execs;
+          res.send(200, data);
+        })
       });
   });
 
@@ -107,6 +77,8 @@ module.exports = function(app) {
       .all(errorOrData(res, next));
   });
 
+
+
   app.get('/api/advertisements/blocked', function(req, res, next) {
     var page = parseInt(req.params.page) || 0;
     Advertisement
@@ -120,15 +92,36 @@ module.exports = function(app) {
       .all(errorOrData(res, next));
   });
 
+  app.get('/api/advertisements/:id', function(req, res, next) {
+    Advertisement
+      .select('*')
+      .where({id: req.params.id})
+      .one(function(err, data) {
+        if (err) return next(err);
+
+        if (data.ad_picture) {
+          data.ad_picture = 'data:image/png;base64,' + data.ad_picture.toString();
+        }
+        res.send(200, data);
+      });
+  });
+
   app.get('/api/executions', function(req, res, next) {
     var page = parseInt(req.params.page) || 0;
     Execution
       .select('id, sid, start_time, finish_time, records, error')
       .order('id DESC')
       .page(page, 10)
-      .load('scraper', function(s) {
-        s.select('scrapers.id as id');
-      })
       .all(errorOrData(res, next));
+  });
+
+  app.get('/api/executions/:id', function(req, res, next) {
+    Execution
+      .select('*')
+      .where({id: req.params.id})
+      .load('advertisements', function(ads) {
+        ads.select('id, create_time, ad_landlord_name, ad_landlord_phone, ad_landlord_type, ad_id, ad_price, ad_price_type, ad_url, error')
+      })
+      .one(errorOrData(res, next));
   });
 };

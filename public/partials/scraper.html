@@ -1,3 +1,74 @@
-<div class="span12">
-  <h4>Scraper #{{scraper.id}}: {{scraper.name}}</h4>
+<div class="block bottom_margin_mid">
+  <h4>{{'Scraper #'|i18n}}{{scraper.id}}</h4>
+</div>
+
+<div class="block bottom_margin_large">
+  <ul class="details ">
+    <li><span>{{'Name'|i18n}}:</span> {{scraper.name}}</li>
+  </ul>
+</div>
+
+<div class="block">
+  <div class="half">
+    <div class="block">
+      <h5>{{'Last 5 executions' | i18n}}</h5>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{{'ID' | i18n}}</th>
+            <th>{{'Start time' | i18n}}</th>
+            <th>{{'Finish time' | i18n}}</th>
+            <th>{{'Fetched records' | i18n}}</th>
+            <th>{{'Error' | i18n}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="exec in scraper.executions">
+            <td width="6%">
+              <a href="#/executions/{{exec.id}}">#{{exec.id}}</a>
+            </td>
+            <td width="24%">{{exec.start_time | date:'dd.MM.yyyy HH:mm:ss'}}
+            </td>
+            <td width="24%">{{exec.finish_time | date:'dd.MM.yyyy HH:mm:ss'}}
+            </td>
+            <td width="24%">{{exec.records}}</td>
+            <td width="24%">{{exec.error}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="half">
+    <div class="block">
+      <h5>{{'Last 5 advertisements' | i18n}}</h5>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>{{'Original ID' | i18n}}</th>
+            <th>{{'Date' | i18n}}</th>
+            <th>{{'Price' | i18n}}</th>
+            <th>{{'Landlord phone' | i18n}}</th>
+            <th>{{'Landlord name' | i18n}}</th>
+            <th>{{'Landlord type' | i18n}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="ad in scraper.advertisements">
+            <td width="5%">
+              <a href="#/advertisements/{{ad.id}}">#{{ad.id}}</a>
+            </td>
+            <td width="15%">
+              <a target="_blank" ng-href="{{ad.ad_url}}">{{ad.ad_id}}</a>
+            </td>
+            <td width="26%">{{ad.create_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+            <td width="18%">{{ad.ad_price}} {{ad.ad_price_type}}</td>
+            <td width="10%" >{{ad.ad_landlord_phone}}</td>
+            <td width="18%">{{ad.ad_landlord_name}}</td>
+            <td width="8%">{{ad.ad_landlord_type | landlord_type}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

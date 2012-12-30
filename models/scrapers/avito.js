@@ -5,6 +5,7 @@ var async = require('async')
   , crypto = require('crypto')
   , db = require('../db')
   , http = require('http')
+  , phoneService = require('../phones')
   , Advertisement = db.Advertisement
   , Execution = db.Execution
   , util = require('util')
@@ -214,6 +215,12 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
 
         // show number and get image coords
         phoneCoords = getImageCoords($phone.find('img'));
+        if (phoneCoords) {
+          phoneCoords.top -= 2.5;
+          phoneCoords.left -= 2.5;
+          phoneCoords.width += 5;
+          phoneCoords.height += 5;
+        }
 
         return JSON.stringify({
           ad_title:          title,
@@ -254,134 +261,55 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
 
       // get images for phone, picture
       async.series([
-        // clip rect
-        function(asyncCallback) {
-          if (data.ad_landlord_phone) {
-            data.ad_landlord_phone.top -= 2.5;
-            data.ad_landlord_phone.left -= 2.5;
-            data.ad_landlord_phone.width += 5;
-            data.ad_landlord_phone.height += 5;
 
-            page.set('clipRect', data.ad_landlord_phone, function() {
-              asyncCallback();
-            });
-          } else {
-            asyncCallback();
+        // Do we have phone to identify, check if it's in blacklist?
+        function(outerCallback) {
+          if (!data.ad_landlord_phone) {
+            outerCallback();
+            return;
           }
-        },
-        // render phone
-        function(asyncCallback) {
-          if (data.ad_landlord_phone) {
-            page.renderBase64('png', function(buf) {
-              data.ad_landlord_phone = new Buffer(buf, 'base64');
-              asyncCallback();
-            });
-          } else {
-            asyncCallback();
-          }
-        },
-        // OCR
-        function(asyncCallback) {
-          var query = 'modify=-resize,250x'
-            , body = {
-              lang: 'rus',
-              type: 'png'
-            };
 
-          if (data.ad_landlord_phone) {
-            body.image = data.ad_landlord_phone.toString('base64');
-
-            var req = http.request({
-              hostname: 'liberitas.info',
-              port:     3001,
-              path:     '/run-ocr?' + query,
-              method:   'POST',
-              headers:  {
-                'Content-type': 'application/json'
-              }
-            }, function(res) {
-              var json = '';
-
-              res.setEncoding('utf8');
-              res.on('data', function(data) {
-                json += data;
-              });
-              res.on('end', function() {
-                var response = JSON.parse(json)
-                  , phone = response.result;
-
-                phone = phone.replace(/[^0-9]/g, '');
+          async.waterfall(
+            [
+              // render
+              function(innerCallback) {
+                var coords = data.ad_landlord_phone;
+                self._renderImage(page, 'png', coords, innerCallback);
+              },
+              // OCR
+              function(buf, innerCallback) {
+                var query = 'modify=-resize,250x';
+                var body = {lang: 'rus', type: 'png'};
+                phoneService.OCR(buf, query, body, innerCallback);
+              },
+              // in blacklist?
+              function(phone, innerCallback) {
                 data.ad_landlord_phone = phone;
-                asyncCallback();
-              });
-            });
-
-            req.write(JSON.stringify(body));
-            req.end();
-          } else {
-            asyncCallback();
-          }
-        },
-        // blacklist
-        function(asyncCallback) {
-          if (data.ad_landlord_phone) {
-            var phone = data.ad_landlord_phone;
-            var req = http.request({
-              hostname: '85.25.148.30',
-              port:     3000,
-              path:     '/query',
-              method:   'POST',
-              headers:  {
-                'Content-type': 'application/json'
+                phoneService.isBlocked(phone, innerCallback);
               }
-            }, function(res) {
-              var json = '';
+            ],
+            function(err, isBlocked) {
+              data.blocked = isBlocked;
+              outerCallback(err);
+            }
+          );
+        },
 
-              res.setEncoding('utf8');
-              res.on('data', function(data) {
-                json += data;
-              });
-              res.on('end', function() {
-                var response = JSON.parse(json);
-                if (response.shift() === phone) {
-                  data.blocked = true;
-                }
-                asyncCallback();
-              });
-            });
-            req.write(JSON.stringify([phone]));
-            req.end();
-          } else {
-            asyncCallback();
+        // Do we have ad picture to save?
+        function(outerCallback) {
+          if (!data.ad_picture) {
+            outerCallback();
+            return;
           }
-        },
-        // clip rect
-        function(asyncCallback) {
-          if (data.ad_picture) {
-            page.set('clipRect', data.ad_picture, function() {
-              asyncCallback();
-            });
-          } else {
-            asyncCallback();
-          }
-        },
-        // render picture
-        function(asyncCallback) {
-          if (data.ad_picture) {
-            page.renderBase64('png', function(buf) {
-              data.ad_picture = buf;
-              asyncCallback();
-            });
-          } else {
-            asyncCallback();
-          }
+
+          var coords = data.ad_picture;
+          self._renderImage(page, 'png', coords, function(err, buf) {
+            data.ad_picture = buf.toString('base64');
+            outerCallback(err);
+          });
         }
       ], function(err) {
-        if (err === 'do-not-add') {
-          callback(null, null);
-        } else {
-          callback(err, data);
-        }
+        callback(err, data);
       });
     }
   );
