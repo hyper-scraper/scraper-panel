@@ -10,5 +10,5 @@
   "dependencies": {
     "q": "0.8.12"
   },
-  "main": "lib/tor-new-identity.js"
+  "main": "lib/reset.js"
 }

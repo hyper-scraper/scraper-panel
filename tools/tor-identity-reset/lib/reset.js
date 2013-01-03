@@ -1,3 +1,9 @@
+/**
+ * Created with IntelliJ IDEA.
+ * User: Alexander <estliberitas> Makarenko
+ * Date: 04.01.13
+ * Time: 3:25
+ */
 'use strict';
 
 var fs = require('fs')
