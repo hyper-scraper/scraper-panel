@@ -1,0 +1,14 @@
+{
+  "name":         "tor-identity-reset",
+  "version":      "0.0.1",
+  "author":       {
+    "name":  "Alexander Makarenko",
+    "email": "estliberitas@gmail.com",
+    "url":   "http://gplus.to/estliberitas"
+  },
+  "private":      true,
+  "dependencies": {
+    "q": "0.8.12"
+  },
+  "main": "lib/tor-new-identity.js"
+}

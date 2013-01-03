@@ -1,6 +1,11 @@
 {
   "name":         "scraper-panel",
   "version":      "0.0.8",
+  "author":       {
+    "name":  "Alexander Makarenko",
+    "email": "estliberitas@gmail.com",
+    "url":   "http://gplus.to/estliberitas"
+  },
   "private":      true,
   "scripts":      {
     "preinstall": "mkdir node_modules ; sh install-mapper.sh",
