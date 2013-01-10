@@ -12,8 +12,9 @@ module.exports = function(app) {
          proxy.page.renderBase64('png', function(imageData) {
            var buf = new Buffer(imageData, 'base64');
            res.send(buf);
+           proxy.end();
          });
-         proxy.end();
+
        });
      });
     });
