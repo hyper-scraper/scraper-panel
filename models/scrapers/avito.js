@@ -216,8 +216,8 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
         // show number and get image coords
         phoneCoords = getImageCoords($phone.find('img'));
         if (phoneCoords) {
-          phoneCoords.top -= 2.5;
-          phoneCoords.left -= 2.5;
+          phoneCoords.top -= 1.5;
+          phoneCoords.left -= 1.5;
           phoneCoords.width += 5;
           phoneCoords.height += 5;
         }
