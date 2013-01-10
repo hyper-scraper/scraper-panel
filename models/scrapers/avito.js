@@ -164,7 +164,7 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
         code:    function() {
           $('#phone').find('a').click();
         },
-        timeout: 1500
+        timeout: 7000
       },
       function() {
         var title = $('h1.p_i_ex_title').html()
