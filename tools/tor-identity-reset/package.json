@@ -10,5 +10,8 @@
   "dependencies": {
     "q": "0.8.12"
   },
-  "main": "lib/reset.js"
+  "main":         "lib/reset.js",
+  "scripts":      {
+    "run": "node runner"
+  }
 }

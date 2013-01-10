@@ -112,10 +112,17 @@ function connect(sock, port, host) {
 }
 
 
-new_identity('127.0.0.1', 9051, cookie, function(err) {
-  if (err) {
-    console.error(err);
-  } else {
-    console.log('Finished');
-  }
-});
+exports.requestNewIdentity = function(host, port, callback) {
+  new_identity(host, port, cookie, callback);
+};
+
+
+if (process.argv[1].indexOf('reset.js') !== -1) {
+  exports.requestNewIdentity('127.0.0.1', 9051, function(err) {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log('Resetting');
+    }
+  });
+}
