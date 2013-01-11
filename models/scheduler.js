@@ -7,6 +7,26 @@ var EventEmitter = require('events').EventEmitter
   , config = require('../config').scrapers;
 
 
+function copy(src, props) {
+  var dest = {}
+    , keys = props.split(',')
+    , k;
+
+  while (k = keys.shift()) {
+    k = k.trim();
+    dest[k] = src[k];
+  }
+
+  return dest;
+}
+
+
+/**
+ * Scheduler for scrapers also an scraping events emitter
+ *
+ * @param {Array} config
+ *    Enabled scraper configurations
+ */
 function Scheduler(config) {
   EventEmitter.call(this);
 
@@ -40,7 +60,7 @@ Scheduler.prototype.scheduleScraping = function() {
         spec.message = 'Scraping around...';
         spec.next = null;
 
-        self.emit('exec:start', spec);
+        self.emit('exec:start', copy(spec, 'sid,status,last,next,message'));
       })
       .on('execution:error', function(err) {
         spec.status = 'error';
@@ -48,7 +68,7 @@ Scheduler.prototype.scheduleScraping = function() {
         spec.last = scraper.started;
         spec.next = Date.now() + conf.interval;
 
-        self.emit('exec:error', err, spec);
+        self.emit('exec:error', err, copy(spec, 'sid,status,last,next,message'));
         spec._tm = setTimeout(spec.run, conf.interval);
       })
       .on('execution:finished', function(data) {
@@ -57,7 +77,7 @@ Scheduler.prototype.scheduleScraping = function() {
         spec.last = scraper.started;
         spec.next = Date.now() + conf.interval;
 
-        self.emit('exec:finished', spec);
+        self.emit('exec:finished', copy(spec, 'sid,status,last,next,message'));
         spec._tm = setTimeout(spec.run, conf.interval);
       });
 
