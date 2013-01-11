@@ -145,6 +145,7 @@ AvitoScraper.prototype.getItemList = function(page, callback) {
 AvitoScraper.prototype.getItemData = function(page, url, callback) {
   var config = this.config
     , self = this
+    , IMG_LOAD_TIMEOUT = config.IMG_LOAD_TIMEOUT || 7000
     , exited = false
     , started = new Date();
 
@@ -164,7 +165,7 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
         code:    function() {
           $('#phone').find('a').click();
         },
-        timeout: 7000
+        timeout: IMG_LOAD_TIMEOUT
       },
       function() {
         var title = $('h1.p_i_ex_title').html()

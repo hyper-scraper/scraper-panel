@@ -3,10 +3,8 @@
 var async = require('async')
   , EventEmitter = require('events').EventEmitter
   , phantomProxy = require('phantom-proxy')
-  , poolModule = require('generic-pool')
   , log = require('../log')
   , phantomLogger = log.getLogger('PhantomJS')
-  , poolLogger = log.getLogger('Phantom pool')
   , util = require('util')
   , exec = require('child_process').exec;
 
@@ -48,80 +46,8 @@ function BaseScraper(options) {
   EventEmitter.call(this);
 
   this.config = options;
-  this.startPool();
 }
 util.inherits(BaseScraper, EventEmitter);
-
-
-/**
- * Create pool of PhantomJS pages
- */
-BaseScraper.prototype.startPool = function() {
-  var config = this.config
-    , phantomConf = config.phantom || {}
-    , poolConf = config.pool || {}
-    , min = poolConf.min || 0
-    , max = poolConf.max || 5
-    , maxIdle = poolConf.idle || 1000
-    , debug = poolConf.debug || false
-    , logger = this.getLogger();
-
-  //noinspection JSValidateTypes
-  this.pool = poolModule.Pool({
-    name:              'phantom-' + config.SID,
-    create:            function(callback) {
-      phantomProxy.create(
-        phantomConf,
-        function(proxy) {
-          proxy.page.on('error', function(err) {
-            if (err) {
-              phantomLogger.error('Uncaught error: %s', err);
-            }
-          });
-          callback(null, proxy);
-        }
-      );
-    },
-    destroy:           function(proxy) {
-      proxy.end(function() {
-        // something here needed?
-      });
-    },
-    min:               min,
-    max:               max,
-    idleTimeoutMillis: maxIdle,
-    log:               debug ? poolLogger : debug
-  });
-
-  logger.info('Created pool %s for scraper', this.pool.getName());
-};
-
-
-/**
- * Helper to get webpage instance from pool
- *
- * @param {Function} callback
- *    Function taking pool error, Phantom webpage instance, and function
- *    which returns page back to pool and calls async.js callback:
- *    (err, page, fn)
- * @param {Function} [asyncCallback]
- *    async.js callback
- */
-BaseScraper.prototype.acquirePage = function(callback, asyncCallback) {
-  var pool = this.pool;
-  pool.acquire(function(err, proxy) {
-    if (err) {
-      console.error(err);
-    }
-
-    callback(err, proxy.page, function(err) {
-      if (proxy) {
-        pool.release(proxy);
-        asyncCallback && asyncCallback(err);
-      }
-    });
-  }, 0);
-};
 
 
 /**
@@ -129,29 +55,56 @@ BaseScraper.prototype.acquirePage = function(callback, asyncCallback) {
  */
 BaseScraper.prototype.run = function() {
   var self = this
-    , pool = this.pool;
+    , config = this.config
+    , phantomConf = config.phantom || {}
+    , proxy;
 
   self.started = new Date();
   self.emit('execution:start');
   async.waterfall([
-    // get list
-    function(cb) {
-      pool.acquire(function(err, proxy) {
-        if (err) {
-          cb(err);
-          pool.release(proxy);
-        } else {
-          self.getItemList(proxy.page, function(err, list) {
-            pool.release(proxy);
-            cb(err, list);
-          });
 
-        }
+
+    /**
+     * Create PhantomJS proxy
+     *
+     * @param {Function} cb
+     *    async.js callback
+     */
+    function(cb) {
+      phantomProxy.create(phantomConf, function(instance) {
+        proxy = instance;
+        proxy.page.on('error', function(err) {
+          err && phantomLogger.error('Uncaught error: %s', err);
+        });
+        cb(null);
       });
     },
 
-    // filter out
+
+    /**
+     * Get list of URLs
+     *
+     * @param {Function} cb
+     *    async.js callback
+     */
+    function(cb) {
+      self.getItemList(proxy.page, cb);
+    },
+
+
+    /**
+     * Filter URL list from prev step
+     *
+     * @param {Array} list
+     *    List of collected URLs
+     * @param {Function} cb
+     *    async.js callback
+     */
     function(list, cb) {
+      if (!list.length) {
+        return cb(new Error('Empty URL list'));
+      }
+
       var nodups = [];
       list.forEach(function(url) {
         if (nodups.indexOf(url) === -1) {
@@ -159,7 +112,6 @@ BaseScraper.prototype.run = function() {
         }
       });
 
-      // freeing old array
       while (list.shift()) {
         void(0);
       }
@@ -167,7 +119,15 @@ BaseScraper.prototype.run = function() {
       self.filterList(nodups, cb);
     },
 
-    // get data
+
+    /**
+     * Get data for each item
+     *
+     * @param {Array} filtered
+     *    List of filtered URLs
+     * @param {Function} cb
+     *    async.js callback
+     */
     function(filtered, cb) {
       if (!filtered.length) {
         cb(null, filtered);
@@ -177,39 +137,40 @@ BaseScraper.prototype.run = function() {
       filtered.reverse();
       var data = [];
       async.forEachSeries(filtered, function(url, asyncCallback) {
-        pool.acquire(function(err, proxy) {
+        self.getItemData(proxy.page, url, function(err, item) {
           if (err) {
-
             data.push([url, err]);
-            console.error('Error acquiring page: ' + err);
-            asyncCallback();
-
-          } else {
-
-            self.getItemData(proxy.page, url, function(err, item) {
-              if (err) {
-                data.push([url, err]);
-              } else if (item) {
-                data.push(item);
-              }
-
-              pool.release(proxy);
-              asyncCallback();
-            });
-
+          } else if (item) {
+            data.push(item);
           }
+          asyncCallback();
         });
       }, function(err) {
         cb(err, data);
       });
     }
-  ], function(err, result) {
+
+
+  ],
+
+    /**
+     *
+     * @param {Error} err
+     *    Error which may be thrown from each step
+     * @param {Array} result
+     *    Collected data
+     * @param {*} proxy
+     *    PhantomJS proxy
+     */
+    function(err, result) {
     self.finished = new Date();
     if (err) {
       self.emit('execution:error', err);
     } else {
       self.emit('execution:finished', result);
     }
+
+    proxy.end(function() {});
   });
 };
 
@@ -289,7 +250,7 @@ BaseScraper.prototype.runCode = function(page, code, callback, evaluateFn) {
   if (typeof code === 'function') {
     evaluateFn.call(page, code, callback);
 
-  // object with timeout
+    // object with timeout
   } else if (typeof code === 'object' && !Array.isArray(code)) {
     evaluateFn.call(page, code.code, function(res) {
       setTimeout(function() {
@@ -297,7 +258,7 @@ BaseScraper.prototype.runCode = function(page, code, callback, evaluateFn) {
       }, code.timeout);
     });
 
-  // bunch of functions
+    // bunch of functions
   } else if (Array.isArray(code)) {
     var callbacked = false;
 
@@ -340,18 +301,10 @@ BaseScraper.prototype.runCode = function(page, code, callback, evaluateFn) {
         console.error(err);
       }
     });
-  // unknown 'code' type
+    // unknown 'code' type
   } else {
     throw new Error('Unknown type of code to evaluate')
   }
-};
-
-
-/**
- * @see {BaseScraper.openAndRun}
- */
-BaseScraper.prototype.openAndRunAsync = function(page, url, code, callback) {
-  this.openAndRun(page, url, code, callback, true);
 };
 
 
@@ -369,6 +322,7 @@ BaseScraper.prototype.tryParseJson = function(json, callback) {
   try {
     var data = JSON.parse(json);
     if (!data) {
+      //noinspection ExceptionCaughtLocallyJS
       throw new Error('No data');
     }
     return data;
@@ -384,6 +338,7 @@ BaseScraper.prototype.tryParseJson = function(json, callback) {
 };
 
 
+//noinspection JSUnusedLocalSymbols
 /**
  * Get list of URLs of pages to be parsed
  *
@@ -410,6 +365,7 @@ BaseScraper.prototype.filterList = function(urls, callback) {
 };
 
 
+//noinspection JSUnusedLocalSymbols
 /**
  * Parse web page content
  *
@@ -473,7 +429,7 @@ BaseScraper.prototype._renderImage = function(page, fmt, coords, callback) {
         callback(null, buf);
       });
     });
-  } catch(ex) {
+  } catch (ex) {
     if (!buf) {
       callback(ex);
     }
