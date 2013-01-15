@@ -166,7 +166,7 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
       },
       function() {
         var title = $('h1.offertitle').text()
-          , name = $('.userbox .brkword').text()
+          , name = $('.userbox .brkword').first().text()
           , id = $('.addetails .c62 .nowrap').html().match(/[0-9]+/).shift()
           , city = $('.locationbox .brkword').text().trim()
           , price = $('.pricelabel strong').html().match(/[0-9 ]+/).shift().replace(/ /g,'')
