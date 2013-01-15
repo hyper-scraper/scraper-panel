@@ -25,19 +25,19 @@ function sha1() {
 
 
 /**
- * Avito scraper
+ * Slando scraper
  *
  * @constructor
  * @extends {BaseScraper}
  */
-function AvitoScraper(options) {
+function SlandoScraper(options) {
   BaseScraper.call(this, options);
 
   var self = this
     , logger = this.getLogger();
 
   this.config.externalJQuery = options.externalJQuery || false;
-  this.config.BASE_URL = 'http://www.avito.ru';
+  this.config.BASE_URL = 'http://slando.ru';
 
   this.on('execution:error', function(err) {
     if (!err) {
@@ -97,7 +97,7 @@ function AvitoScraper(options) {
       });
   });
 }
-util.inherits(AvitoScraper, BaseScraper);
+util.inherits(SlandoScraper, BaseScraper);
 
 
 /**
@@ -105,7 +105,7 @@ util.inherits(AvitoScraper, BaseScraper);
  *
  * @see {BaseScraper.getItemList}
  */
-AvitoScraper.prototype.getItemList = function(page, callback) {
+SlandoScraper.prototype.getItemList = function(page, callback) {
   var config = this.config
     , url = config.SEARCH_URL
     , self = this;
@@ -114,7 +114,7 @@ AvitoScraper.prototype.getItemList = function(page, callback) {
     page,
     url,
     function() {
-      var elements = $('.t_i_title .t_i_h3 a')
+      var elements = $('a.link.linkWithHash.clicker:visible')
         , urls = [];
 
       elements.each(function() {
@@ -128,9 +128,6 @@ AvitoScraper.prototype.getItemList = function(page, callback) {
       if (!urls) {
         return;
       }
-      urls = urls.map(function(url) {
-        return config.BASE_URL + url;
-      });
       urls && callback(null, urls);
     }
   );
@@ -142,7 +139,7 @@ AvitoScraper.prototype.getItemList = function(page, callback) {
  *
  * @see {BaseScraper.getItemData}
  */
-AvitoScraper.prototype.getItemData = function(page, url, callback) {
+SlandoScraper.prototype.getItemData = function(page, url, callback) {
   var config = this.config
     , self = this
     , IMG_LOAD_TIMEOUT = config.IMG_LOAD_TIMEOUT || 2000
@@ -163,26 +160,25 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
     [
       {
         code:    function() {
-          $('#phone').find('a').click();
+          $('a.link-phone').click();
         },
         timeout: IMG_LOAD_TIMEOUT
       },
       function() {
-        var title = $('h1.p_i_ex_title').html()
-          , $seller = $('#seller')
-          , name = $seller.find('strong').html()
-          , id = $('#item_id').html()
-          , city = $('#map').find('a').html()
-          , $price = $('span.p_i_price strong')[0].childNodes
-          , price = null
-          , price_type = null
-          , $kw = $('dl.description.b_d_l .b_d_params div:first-child').children()
+        var title = $('h1.offertitle').text()
+          , name = $('.userbox .brkword').text()
+          , id = $('.addetails .c62 .nowrap').html().match(/[0-9]+/).shift()
+          , city = $('.locationbox .brkword').text().trim()
+          , price = $('.pricelabel strong').html().match(/[0-9 ]+/).shift().replace(/ /g,'')
+          , $details = $('table.details')
+          , price_type = $details.find('td:first strong').text()
+          , $kw = $details.find('td')
           , keywords = []
-          , description = $('#desc_text').html()
-          , $image = $('td.big-picture > img')
+          , description = $details.next().text()
+          , $image = $('.gallery_img > img')
           , imgCoords
-          , isPrivate = ($seller.find('span.grey').length === 0)
-          , $phone = $('#phone')
+          , isPrivate = null
+          , $phone = $('img.contactimg').first()
           , phoneCoords;
 
         function getImageCoords($img) {
@@ -198,24 +194,19 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
           };
         }
 
-        // price parts: number and measure
-        if ($price.length) {
-          price = $price[0].textContent.replace(/[^0-9]/g, '');
-          if ($price.length > 1) {
-            price_type = $price[1].textContent.replace(/[\n\r\s\t ]/g, '');
-          }
-        }
-
         // keywords
         $kw.each(function() {
-          keywords.push($(this).html().trim());
+          var text = $(this).text();
+          keywords.push(text.replace(/:[\n\r\t ]+/, ': ').trim());
         });
+        // remove price type
+        keywords.shift();
 
         // image coords
         imgCoords = getImageCoords($image);
 
         // show number and get image coords
-        phoneCoords = getImageCoords($phone.find('img'));
+        phoneCoords = getImageCoords($phone);
         if (phoneCoords) {
           phoneCoords.top -= 1.5;
           phoneCoords.left -= 1.5;
@@ -279,7 +270,7 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
               },
               // OCR
               function(buf, innerCallback) {
-                var query = 'modify=-resize,250x';
+                var query = 'modify=-resize,250x&png8=true';
                 var body = {lang: 'rus', type: 'png'};
                 phoneService.OCR(buf, query, body, innerCallback);
               },
@@ -325,7 +316,7 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
  * @param {Function} callback
  *    Callback taking args (err, filtered)
  */
-AvitoScraper.prototype.filterList = function(list, callback) {
+SlandoScraper.prototype.filterList = function(list, callback) {
   var config = this.config;
 
   Advertisement
@@ -350,4 +341,4 @@ AvitoScraper.prototype.filterList = function(list, callback) {
 };
 
 
-module.exports = AvitoScraper;
+module.exports = SlandoScraper;

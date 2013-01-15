@@ -71,6 +71,7 @@ BaseScraper.prototype.run = function() {
      *    async.js callback
      */
     function(cb) {
+      phantomConf.port = 1060 + config.SID;
       phantomProxy.create(phantomConf, function(instance) {
         proxy = instance;
         proxy.page.on('error', function(err) {

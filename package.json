@@ -8,7 +8,7 @@
   },
   "private":      true,
   "scripts":      {
-    "preinstall": "mkdir node_modules ; sh install-mapper.sh",
+    "preinstall": "mkdir node_modules 2>/dev/null ; sh install-mapper.sh",
     "start":      "node app"
   },
   "dependencies": {

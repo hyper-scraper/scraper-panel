@@ -33,7 +33,7 @@ module.exports = function(app) {
 
   app.get('/api/scrapers/:id', setSid, function(req, res, next) {
     Scraper
-      .select('id, name')
+      .select('id, resource, name')
       .where({id: req.sid})
       .one(function(err, data) {
         if (err) return next(err);

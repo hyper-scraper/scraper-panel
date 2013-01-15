@@ -19,11 +19,12 @@
         <td width="3%">
           <a href="#/scrapers/{{scraper.id}}">#{{scraper.id}}</a>
         </td>
+        <td width="10%">{{scraper.resource}}</td>
         <td width="30%">{{scraper.name}}</td>
         <td width="10%">{{scraper.status}}</td>
-        <td width="15%">{{scraper.last_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+        <td width="5%">{{scraper.last_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
         <td width="20%">{{scraper.last_result}}</td>
-        <td width="15%">{{scraper.next_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
+        <td width="5%">{{scraper.next_time | date:'dd.MM.yyyy HH:mm:ss'}}</td>
         <td width="7%">
           <a ng-click="runNow(scraper);">{{'Run now!' | i18n}}</a>
         </td>
