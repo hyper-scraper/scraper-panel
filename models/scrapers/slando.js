@@ -176,29 +176,15 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
           , $kw = $details.find('td')
           , keywords = []
           , description = $details.next().text()
-          , $image = $('.gallery_img > img')
-          , imgCoords
+          , imageUrl = $('.gallery_img > img').attr('src') || null
           , isPrivate = null
           , $phone = $('img.contactimg').first()
-          , phoneCoords;
-
-        function getImageCoords($img) {
-          if (!$img.length) {
-            return null;
-          }
-          var offset = $img.offset();
-          return {
-            top:    offset.top,
-            left:   offset.left,
-            width:  $img.width(),
-            height: $img.height()
-          };
-        }
+          , phoneCoords = null;
 
         if ($price.length) {
           price = $price.html()
             .match(/[0-9 ]+/).shift()
-            .replace(/ /g,'');
+            .replace(/ /g, '');
         }
 
         // keywords
@@ -209,21 +195,18 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
         // remove price type
         keywords.shift();
 
-        // image coords
-        imgCoords = getImageCoords($image);
-
-        // show number and get image coords
-        phoneCoords = getImageCoords($phone);
-        if (phoneCoords) {
+        // phone coords
+        if ($phone.length) {
+          phoneCoords = $phone.offset();
           phoneCoords.top -= 1.5;
           phoneCoords.left -= 1.5;
-          phoneCoords.width += 5;
-          phoneCoords.height += 5;
+          phoneCoords.width = $phone.width() + 5;
+          phoneCoords.height = $phone.height() + 5;
         }
 
         return JSON.stringify({
           ad_title:          title,
-          ad_description:    keywords.join(' ') + '\n' + description,
+          ad_description:    keywords.join('\n') + '\n' + description,
           ad_landlord_name:  name,
           ad_landlord_type:  isPrivate ? 'private' : 'agency',
           ad_landlord_phone: phoneCoords,
@@ -231,7 +214,7 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
           ad_city:           city,
           ad_price:          price,
           ad_price_type:     price_type,
-          ad_picture:        imgCoords,
+          ad_picture:        imageUrl,
           ad_url:            window.location.href
         });
       }
@@ -258,58 +241,39 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
         }
       }
 
-      // get images for phone, picture
-      async.series([
+      if (!data.ad_landlord_phone) {
+        data.blocked = false;
+        return callback(null, data);
+      }
 
-        // Do we have phone to identify, check if it's in blacklist?
-        function(outerCallback) {
-          if (!data.ad_landlord_phone) {
-            outerCallback();
-            return;
+      async.waterfall(
+        [
+
+          // render
+          function(innerCallback) {
+            var coords = data.ad_landlord_phone;
+            self._renderImage(page, 'png', coords, innerCallback);
+          },
+
+          // OCR
+          function(buf, innerCallback) {
+            var query = 'modify=-resize,250x&png8=true';
+            var body = {lang: 'rus', type: 'png'};
+            phoneService.OCR(buf, query, body, innerCallback);
+          },
+
+          // in blacklist?
+          function(phone, innerCallback) {
+            data.ad_landlord_phone = phone;
+            phoneService.isBlocked(phone, innerCallback);
           }
 
-          async.waterfall(
-            [
-              // render
-              function(innerCallback) {
-                var coords = data.ad_landlord_phone;
-                self._renderImage(page, 'png', coords, innerCallback);
-              },
-              // OCR
-              function(buf, innerCallback) {
-                var query = 'modify=-resize,250x&png8=true';
-                var body = {lang: 'rus', type: 'png'};
-                phoneService.OCR(buf, query, body, innerCallback);
-              },
-              // in blacklist?
-              function(phone, innerCallback) {
-                data.ad_landlord_phone = phone;
-                phoneService.isBlocked(phone, innerCallback);
-              }
-            ],
-            function(err, isBlocked) {
-              data.blocked = isBlocked;
-              outerCallback(err);
-            }
-          );
-        },
-
-        // Do we have ad picture to save?
-        function(outerCallback) {
-          if (!data.ad_picture) {
-            outerCallback();
-            return;
-          }
-
-          var coords = data.ad_picture;
-          self._renderImage(page, 'png', coords, function(err, buf) {
-            data.ad_picture = buf.toString('base64');
-            outerCallback(err);
-          });
+        ],
+        function(err, isBlocked) {
+          data.blocked = isBlocked;
+          callback(err, data);
         }
-      ], function(err) {
-        callback(err, data);
-      });
+      );
     }
   );
 };
