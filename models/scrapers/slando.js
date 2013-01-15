@@ -169,7 +169,8 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
           , name = $('.userbox .brkword').first().text()
           , id = $('.addetails .c62 .nowrap').html().match(/[0-9]+/).shift()
           , city = $('.locationbox .brkword').text().trim()
-          , price = $('.pricelabel strong').html().match(/[0-9 ]+/).shift().replace(/ /g,'')
+          , $price = $('.pricelabel strong')
+          , price = 0
           , $details = $('table.details')
           , price_type = $details.find('td:first strong').text()
           , $kw = $details.find('td')
@@ -192,6 +193,12 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
             width:  $img.width(),
             height: $img.height()
           };
+        }
+
+        if ($price.length) {
+          price = $price.html()
+            .match(/[0-9 ]+/).shift()
+            .replace(/ /g,'');
         }
 
         // keywords
