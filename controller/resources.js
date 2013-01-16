@@ -73,7 +73,7 @@ module.exports = function(app) {
       .order('id DESC')
       .page(page, 20)
       .load('scraper', function(s) {
-        s.select('scrapers.resource as name');
+        s.select('scrapers.id as id, scrapers.resource as name');
       })
       .all(errorOrData(res, next));
   });
