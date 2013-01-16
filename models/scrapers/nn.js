@@ -24,19 +24,19 @@ function sha1() {
 
 
 /**
- * IRR scraper
+ * nn.ru scraper
  *
  * @constructor
  * @extends {BaseScraper}
  */
-function IRRScraper(options) {
+function NNScraper(options) {
   BaseScraper.call(this, options);
 
   var self = this
     , logger = this.getLogger();
 
   this.config.externalJQuery = options.externalJQuery || false;
-  this.config.BASE_URL = 'http://www.irr.ru';
+  this.config.BASE_URL = 'http://real.nn.ru/ad2';
 
   this.on('execution:error', function(err) {
     if (!err) {
@@ -96,7 +96,7 @@ function IRRScraper(options) {
       });
   });
 }
-util.inherits(IRRScraper, BaseScraper);
+util.inherits(NNScraper, BaseScraper);
 
 
 /**
@@ -104,7 +104,7 @@ util.inherits(IRRScraper, BaseScraper);
  *
  * @see {BaseScraper.getItemList}
  */
-IRRScraper.prototype.getItemList = function(page, callback) {
+NNScraper.prototype.getItemList = function(page, callback) {
   var config = this.config
     , url = config.SEARCH_URL
     , self = this;
@@ -113,7 +113,7 @@ IRRScraper.prototype.getItemList = function(page, callback) {
     page,
     url,
     function() {
-      var elements = $('td.tdTxt > .h3 > a:visible')
+      var elements = $('.rlItem .rlHead a')
         , urls = [];
 
       elements.each(function() {
@@ -127,6 +127,9 @@ IRRScraper.prototype.getItemList = function(page, callback) {
       if (!urls) {
         return;
       }
+      urls = urls.map(function(url) {
+        return self.config.BASE_URL + url.substring(1);
+      });
       urls && callback(null, urls);
     }
   );
@@ -138,115 +141,83 @@ IRRScraper.prototype.getItemList = function(page, callback) {
  *
  * @see {BaseScraper.getItemData}
  */
-IRRScraper.prototype.getItemData = function(page, url, callback) {
-  var config = this.config
-    , self = this
-    , IMG_LOAD_TIMEOUT = config.IMG_LOAD_TIMEOUT || 2000
-    , exited = false
+NNScraper.prototype.getItemData = function(page, url, callback) {
+  var self = this
     , started = new Date();
 
-  function onError(err) {
-    if (err && !exited) {
-      exited = true;
-      callback(err);
-    }
-  }
-
-  page.once('error', onError);
-
   this.openAndRun(page, url,
-    [
-      {
-        code:    function() {
-          $('.cb_picture:visible').click();
-        },
-        timeout: IMG_LOAD_TIMEOUT
-      },
-      function() {
-        var title = $('.wrapTitleLeft.cb_header').text()
-          , name = null
-          , id = $('.b-infAdvert .floatLeft p:first').text().match(/[0-9]+/).shift()
-          , city = $('.b-adressAdv .h3').text()
-          , price = $('.prise .red').text().replace(/[^0-9]/g, '') || null
-          , price_type = $('#currencySelected').text() || null
-          , $kw = $('#allParams tr')
-          , keywords = []
-          , description = $('.txtAdvert .advert_text').text()
-          , imageUrl = $('.photoOrig > img').attr('src') || null
-          , isPrivate = $('.b-infAdvert .gray').text().indexOf('Частное') !== -1
-          , phoneDirty = $('.b-owner .wrapIcons').text().match(/[\+\-\(\) 0-9]+/)
-          , phone = null;
+    function getData() {
+      var title = $('table h1').text().replace(/[\s\t]+/g, ' ')
+        , name = null
+        , id = window.location.href.match(/=[0-9]+$/)
+        , $addrImg = $('.rlParams').find('img[src*="map.gif"]')
+        , city = null
+        , price = $('.rlHItemR_R').text().match(/[0-9 ]+/)
+        , price_type = $('.rlHItemR_R').text().trim().match(/[^ 0-9]+/)
+        , $kw = $('.rlParams-elem')
+        , keywords = []
+        , description = $('#adtext-block').text()
+        , imageUrl = null
+        , isPrivate = true
+        , phoneDirty = $('.rlTel').text().replace(/[\n\s\t]/g, '')
+        , phone = null;
 
-        // keywords
-        $kw.each(function() {
-          if ($(this).children().length == 2) {
-            var $children = $(this).children()
-              , kv = ['first', 'last'].map(function(method) {
-              return $children[method]().text().trim();
-            }, this);
-            keywords.push(kv.join(': '))
-          }
-        });
-
-        if (phoneDirty) {
-          phone = phoneDirty
-            .shift()
-            .replace(/[^0-9]/g, '');
-
-          if (phone.length === 11 && phone[0] === '7') {
-            phone = '8' + phone.substring(1);
-          }
-        }
-
-        if (!isPrivate) {
-          name = $('.nameConpany b').text();
-
-          if ($('.b-owner .wrapMargin').children().length == 2) {
-            name += ', ' + $('.b-owner .wrapMargin')
-              .children()
-              .first()
-              .html()
-              .replace(/^[^>]+>/, '')
-              .trim()
-          }
-        } else if (phoneDirty) {
-          var matches = $('.b-owner .wrapIcons')
-            .first()
-            .text().trim()
-            .split(/\s+/, 2);
-
-          if (matches.length == 2) {
-            matches.shift();
-            name = matches.shift();
-            matches = null;
-          }
-        }
-
-        return JSON.stringify({
-          ad_title:          title,
-          ad_description:    keywords.join('\n') + '\n' + description,
-          ad_landlord_name:  name,
-          ad_landlord_type:  isPrivate ? 'private' : 'agency',
-          ad_landlord_phone: phone,
-          ad_id:             id,
-          ad_city:           city,
-          ad_price:          price,
-          ad_price_type:     price_type,
-          ad_picture:        imageUrl,
-          ad_url:            window.location.href.replace(/#.*$/, '')
-        });
+      // name, phone
+      if (phoneDirty) {
+        name = phoneDirty.replace(/[\(\)0-9\+\-]/g, '');
+        phone = phoneDirty.replace(/[^0-9]/g, '');
       }
-    ],
+
+      // adv id
+      if (id) {
+        id = id.shift().substring(1);
+      }
+
+      // address
+      if ($addrImg.length) {
+        city = $addrImg.parent().text().replace(/^.*:/m, '');
+      }
+
+      // price and price type
+      if (price) {
+        price = price.shift().replace(/[^0-9]/g, '');
+      }
+      if (price_type) {
+        price_type = price_type.shift();
+      }
+
+      // keywords
+      $kw.each(function() {
+        var text = $(this).text().trim().replace(/[\t\s]+/, ' ')
+          , kv = [
+            text.match(/^.*(?=:)/).shift(),
+            text.match(/: .*$/).shift().substring(2)
+          ];
+
+        keywords.push(kv.join(': '));
+      });
+
+      return JSON.stringify({
+        ad_title:          title,
+        ad_description:    keywords.join('\n') + '\n' + description,
+        ad_landlord_name:  name,
+        ad_landlord_type:  isPrivate ? 'private' : 'agency',
+        ad_landlord_phone: phone,
+        ad_id:             id,
+        ad_city:           city,
+        ad_price:          price,
+        ad_price_type:     price_type,
+        ad_picture:        imageUrl,
+        ad_url:            window.location.href.replace(/#.*$/, '')
+      });
+    },
     function(json) {
       var data
         , k;
 
-      if (exited || !(data = self.tryParseJson(json, callback))) {
+      if (!(data = self.tryParseJson(json, callback))) {
         return;
       }
-
-      exited = true;
-      page.emit('error');
 
       data.create_time = started.toJSON();
       for (k in data) {
@@ -273,7 +244,7 @@ IRRScraper.prototype.getItemData = function(page, url, callback) {
  * @param {Function} callback
  *    Callback taking args (err, filtered)
  */
-IRRScraper.prototype.filterList = function(list, callback) {
+NNScraper.prototype.filterList = function(list, callback) {
   var config = this.config;
 
   Advertisement
@@ -298,4 +269,4 @@ IRRScraper.prototype.filterList = function(list, callback) {
 };
 
 
-module.exports = IRRScraper;
+module.exports = NNScraper;

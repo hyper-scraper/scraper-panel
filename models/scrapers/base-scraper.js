@@ -160,8 +160,6 @@ BaseScraper.prototype.run = function() {
      *    Error which may be thrown from each step
      * @param {Array} result
      *    Collected data
-     * @param {*} proxy
-     *    PhantomJS proxy
      */
     function(err, result) {
     self.finished = new Date();
@@ -238,7 +236,7 @@ BaseScraper.prototype.openAndRun = function(page, url, code, callback, async) {
  * @param {*} page
  *    Phantom page object
  * @param {Array|Object|Function} code
- *    Function or bunch of function
+ *    Function or bunch of functions
  * @param {Function} callback
  *    Callback taking args (err, result)
  * @param {Function} evaluateFn
