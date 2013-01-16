@@ -65,7 +65,7 @@ module.exports = function(app) {
   });
 
   app.get('/api/advertisements', function(req, res, next) {
-    var page = (parseInt(req.query.page)-1) || 0;
+    var page = (parseInt(req.query.page) - 1) || 0;
     if (page < 0) page = 0;
 
     Advertisement
@@ -86,17 +86,17 @@ module.exports = function(app) {
   });
 
   /*app.get('/api/advertisements/blocked', function(req, res, next) {
-    var page = parseInt(req.params.page) || 0;
-    Advertisement
-      .select('id, sid, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
-      .where({blocked: 1})
-      .order('id DESC')
-      .page(page, 10)
-      .load('scraper', function(s) {
-        s.select('scrapers.id as id');
-      })
-      .all(errorOrData(res, next));
-  });*/
+   var page = parseInt(req.params.page) || 0;
+   Advertisement
+   .select('id, sid, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
+   .where({blocked: 1})
+   .order('id DESC')
+   .page(page, 10)
+   .load('scraper', function(s) {
+   s.select('scrapers.id as id');
+   })
+   .all(errorOrData(res, next));
+   });*/
 
   app.get('/api/advertisements/:id', function(req, res, next) {
     Advertisement
@@ -106,7 +106,11 @@ module.exports = function(app) {
         if (err) return next(err);
 
         if (data.ad_picture) {
-          data.ad_picture = 'data:image/png;base64,' + data.ad_picture.toString();
+          data.ad_picture = data.ad_picture.toString();
+
+          if (data.ad_picture.indexOf('//') === -1) {
+            data.ad_picture = 'data:image/png;base64,' + data.ad_picture;
+          }
         }
         res.send(200, data);
       });
