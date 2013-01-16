@@ -25,19 +25,19 @@ function sha1() {
 
 
 /**
- * Slando scraper
+ * IRR scraper
  *
  * @constructor
  * @extends {BaseScraper}
  */
-function SlandoScraper(options) {
+function IRRScraper(options) {
   BaseScraper.call(this, options);
 
   var self = this
     , logger = this.getLogger();
 
   this.config.externalJQuery = options.externalJQuery || false;
-  this.config.BASE_URL = 'http://slando.ru';
+  this.config.BASE_URL = 'http://www.irr.ru';
 
   this.on('execution:error', function(err) {
     if (!err) {
@@ -97,7 +97,7 @@ function SlandoScraper(options) {
       });
   });
 }
-util.inherits(SlandoScraper, BaseScraper);
+util.inherits(IRRScraper, BaseScraper);
 
 
 /**
@@ -105,7 +105,7 @@ util.inherits(SlandoScraper, BaseScraper);
  *
  * @see {BaseScraper.getItemList}
  */
-SlandoScraper.prototype.getItemList = function(page, callback) {
+IRRScraper.prototype.getItemList = function(page, callback) {
   var config = this.config
     , url = config.SEARCH_URL
     , self = this;
@@ -114,7 +114,7 @@ SlandoScraper.prototype.getItemList = function(page, callback) {
     page,
     url,
     function() {
-      var elements = $('a.link.linkWithHash.clicker:visible')
+      var elements = $('td.tdTxt > .h3 > a:visible')
         , urls = [];
 
       elements.each(function() {
@@ -139,7 +139,7 @@ SlandoScraper.prototype.getItemList = function(page, callback) {
  *
  * @see {BaseScraper.getItemData}
  */
-SlandoScraper.prototype.getItemData = function(page, url, callback) {
+IRRScraper.prototype.getItemData = function(page, url, callback) {
   var config = this.config
     , self = this
     , IMG_LOAD_TIMEOUT = config.IMG_LOAD_TIMEOUT || 2000
@@ -159,48 +159,68 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
     [
       {
         code:    function() {
-          $('a.link-phone').click();
+          $('.cb_picture:visible').click();
         },
         timeout: IMG_LOAD_TIMEOUT
       },
-      function() {
-        var title = $('h1.offertitle').text()
-          , name = $('.userbox .brkword').first().text()
-          , id = $('.addetails .c62 .nowrap').html().match(/[0-9]+/).shift()
-          , city = $('.locationbox .brkword').text().trim()
-          , $price = $('.pricelabel strong')
-          , price = 0
-          , $details = $('table.details')
-          , price_type = $details.find('td:first strong').text()
-          , $kw = $details.find('td')
+      function getData() {
+        var title = $('.wrapTitleLeft.cb_header').text()
+          , name = null
+          , id = $('.b-infAdvert .floatLeft p:first').text().match(/[0-9]+/).shift()
+          , city = $('.b-adressAdv .h3').text()
+          , price = $('.prise .red').text().replace(/[^0-9]/g, '') || null
+          , price_type = $('#currencySelected').text() || null
+          , $kw = $('#allParams tr')
           , keywords = []
-          , description = $details.next().text()
-          , imageUrl = $('.gallery_img > img').attr('src') || null
-          , isPrivate = null
-          , $phone = $('img.contactimg').first()
-          , phoneCoords = null;
-
-        if ($price.length) {
-          price = $price.html()
-            .match(/[0-9 ]+/).shift()
-            .replace(/ /g, '');
-        }
+          , description = $('.txtAdvert .advert_text').text()
+          , imageUrl = $('.photoOrig > img').attr('src') || null
+          , isPrivate = $('.b-infAdvert .gray').text().indexOf('Частное') !== -1
+          , phoneDirty = $('.b-owner .wrapIcons').text().match(/[\+\-\(\) 0-9]+/)
+          , phone = null;
 
         // keywords
         $kw.each(function() {
-          var text = $(this).text();
-          keywords.push(text.replace(/:[\n\r\t ]+/, ': ').trim());
+          if ($(this).children().length == 2) {
+            var $children = $(this).children()
+              , kv = ['first', 'last'].map(function(method) {
+              return $children[method]().text().trim();
+            }, this);
+            keywords.push(kv.join(': '))
+          }
         });
-        // remove price type
-        keywords.shift();
 
-        // phone coords
-        if ($phone.length) {
-          phoneCoords = $phone.offset();
-          phoneCoords.top -= 1.5;
-          phoneCoords.left -= 1.5;
-          phoneCoords.width = $phone.width() + 5;
-          phoneCoords.height = $phone.height() + 5;
+        if (phoneDirty) {
+          phone = phoneDirty
+            .shift()
+            .replace(/[^0-9]/g, '');
+
+          if (phone.length === 11 && phone[0] === '7') {
+            phone = '8' + phone.substring(1);
+          }
+        }
+
+        if (!isPrivate) {
+          name = $('.nameConpany b').text();
+
+          if ($('.b-owner .wrapMargin').children().length == 2) {
+            name += ', ' + $('.b-owner .wrapMargin')
+              .children()
+              .first()
+              .html()
+              .replace(/^[^>]+>/, '')
+              .trim()
+          }
+        } else if (phoneDirty) {
+          var matches = $('.b-owner .wrapIcons')
+            .first()
+            .text().trim()
+            .split(/\s+/, 2);
+
+          if (matches.length == 2) {
+            matches.shift();
+            name = matches.shift();
+            matches = null;
+          }
         }
 
         return JSON.stringify({
@@ -208,7 +228,7 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
           ad_description:    keywords.join('\n') + '\n' + description,
           ad_landlord_name:  name,
           ad_landlord_type:  isPrivate ? 'private' : 'agency',
-          ad_landlord_phone: phoneCoords,
+          ad_landlord_phone: phone,
           ad_id:             id,
           ad_city:           city,
           ad_price:          price,
@@ -240,39 +260,7 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
         }
       }
 
-      if (!data.ad_landlord_phone) {
-        data.blocked = false;
-        return callback(null, data);
-      }
-
-      async.waterfall(
-        [
-
-          // render
-          function(innerCallback) {
-            var coords = data.ad_landlord_phone;
-            self._renderImage(page, 'png', coords, innerCallback);
-          },
-
-          // OCR
-          function(buf, innerCallback) {
-            var query = 'modify=-resize,250x&png8=true';
-            var body = {lang: 'rus', type: 'png'};
-            phoneService.OCR(buf, query, body, innerCallback);
-          },
-
-          // in blacklist?
-          function(phone, innerCallback) {
-            data.ad_landlord_phone = phone;
-            phoneService.isBlocked(phone, innerCallback);
-          }
-
-        ],
-        function(err, isBlocked) {
-          data.blocked = isBlocked;
-          callback(err, data);
-        }
-      );
+      callback(null, data);
     }
   );
 };
@@ -286,7 +274,7 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
  * @param {Function} callback
  *    Callback taking args (err, filtered)
  */
-SlandoScraper.prototype.filterList = function(list, callback) {
+IRRScraper.prototype.filterList = function(list, callback) {
   var config = this.config;
 
   Advertisement
@@ -311,4 +299,4 @@ SlandoScraper.prototype.filterList = function(list, callback) {
 };
 
 
-module.exports = SlandoScraper;
+module.exports = IRRScraper;

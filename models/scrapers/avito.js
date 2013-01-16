@@ -152,7 +152,6 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
   function onError(err) {
     if (err && !exited) {
       exited = true;
-      console.log('LOOOL: %s', err);
       callback(err);
     }
   }
@@ -180,23 +179,10 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
           , keywords = []
           , description = $('#desc_text').html()
           , $image = $('td.big-picture > img')
-          , imgCoords
+          , imageUrl = null
           , isPrivate = ($seller.find('span.grey').length === 0)
-          , $phone = $('#phone')
-          , phoneCoords;
-
-        function getImageCoords($img) {
-          if (!$img.length) {
-            return null;
-          }
-          var offset = $img.offset();
-          return {
-            top:    offset.top,
-            left:   offset.left,
-            width:  $img.width(),
-            height: $img.height()
-          };
-        }
+          , $phone = $('#phone').find('img')
+          , phoneCoords = null;
 
         // price parts: number and measure
         if ($price.length) {
@@ -212,15 +198,17 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
         });
 
         // image coords
-        imgCoords = getImageCoords($image);
+        if ($image.length) {
+          imageUrl = $image.attr('src');
+        }
 
         // show number and get image coords
-        phoneCoords = getImageCoords($phone.find('img'));
-        if (phoneCoords) {
+        if ($phone.length) {
+          phoneCoords = $phone.offset();
           phoneCoords.top -= 1.5;
           phoneCoords.left -= 1.5;
-          phoneCoords.width += 5;
-          phoneCoords.height += 5;
+          phoneCoords.width = $phone.width() + 5;
+          phoneCoords.height = $phone.height() + 5;
         }
 
         return JSON.stringify({
@@ -233,8 +221,8 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
           ad_city:           city,
           ad_price:          price,
           ad_price_type:     price_type,
-          ad_picture:        imgCoords,
-          ad_url:            window.location.href
+          ad_picture:        imageUrl,
+          ad_url:            window.location.href.replace(/#.*$/, '')
         });
       }
     ],
@@ -260,58 +248,35 @@ AvitoScraper.prototype.getItemData = function(page, url, callback) {
         }
       }
 
-      // get images for phone, picture
-      async.series([
+      if (!data.ad_landlord_phone) {
+        callback(null, data);
+        return;
+      }
 
-        // Do we have phone to identify, check if it's in blacklist?
-        function(outerCallback) {
-          if (!data.ad_landlord_phone) {
-            outerCallback();
-            return;
+      async.waterfall(
+        [
+          // render
+          function(innerCallback) {
+            var coords = data.ad_landlord_phone;
+            self._renderImage(page, 'png', coords, innerCallback);
+          },
+          // OCR
+          function(buf, innerCallback) {
+            var query = 'modify=-resize,250x';
+            var body = {lang: 'rus', type: 'png'};
+            phoneService.OCR(buf, query, body, innerCallback);
+          },
+          // in blacklist?
+          function(phone, innerCallback) {
+            data.ad_landlord_phone = phone;
+            phoneService.isBlocked(phone, innerCallback);
           }
-
-          async.waterfall(
-            [
-              // render
-              function(innerCallback) {
-                var coords = data.ad_landlord_phone;
-                self._renderImage(page, 'png', coords, innerCallback);
-              },
-              // OCR
-              function(buf, innerCallback) {
-                var query = 'modify=-resize,250x';
-                var body = {lang: 'rus', type: 'png'};
-                phoneService.OCR(buf, query, body, innerCallback);
-              },
-              // in blacklist?
-              function(phone, innerCallback) {
-                data.ad_landlord_phone = phone;
-                phoneService.isBlocked(phone, innerCallback);
-              }
-            ],
-            function(err, isBlocked) {
-              data.blocked = isBlocked;
-              outerCallback(err);
-            }
-          );
-        },
-
-        // Do we have ad picture to save?
-        function(outerCallback) {
-          if (!data.ad_picture) {
-            outerCallback();
-            return;
-          }
-
-          var coords = data.ad_picture;
-          self._renderImage(page, 'png', coords, function(err, buf) {
-            data.ad_picture = buf.toString('base64');
-            outerCallback(err);
-          });
+        ],
+        function(err, isBlocked) {
+          data.blocked = isBlocked;
+          callback(err, data);
         }
-      ], function(err) {
-        callback(err, data);
-      });
+      );
     }
   );
 };
