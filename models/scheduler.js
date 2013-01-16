@@ -4,7 +4,15 @@ var EventEmitter = require('events').EventEmitter
   , logger = require('./log')('Scheduler')
   , scrapers = require('./scrapers')
   , util = require('util')
-  , config = require('../config').scrapers;
+  , config = require('../config').scrapers
+  , hooks = null;
+
+
+try {
+  hooks = require('./hooks');
+} catch (ex) {
+  logger.warn('No hooks available');
+}
 
 
 function copy(src, props) {
@@ -60,6 +68,7 @@ Scheduler.prototype.scheduleScraping = function() {
         spec.message = 'Scraping around...';
 
         self.emit('exec:start', copy(spec, 'sid,status,last,next,message'));
+        hooks && hooks.emit('exec:start', conf);
       })
       .on('execution:error', function(err) {
         var interval = conf.interval - Date.now() + spec.next;
@@ -71,6 +80,8 @@ Scheduler.prototype.scheduleScraping = function() {
 
         self.emit('exec:error', err, copy(spec, 'sid,status,last,next,message'));
         spec._tm = setTimeout(spec.run, interval);
+
+        hooks && hooks.emit('exec:error', error, conf);
       })
       .on('execution:finished', function(data) {
         var interval = conf.interval - Date.now() + spec.next;
@@ -82,6 +93,8 @@ Scheduler.prototype.scheduleScraping = function() {
 
         self.emit('exec:finished', copy(spec, 'sid,status,last,next,message'));
         spec._tm = setTimeout(spec.run, interval);
+
+        hooks && hooks.emit('exec:finished', data, conf);
       });
 
     logger.info(
