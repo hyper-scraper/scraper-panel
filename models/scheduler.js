@@ -58,27 +58,30 @@ Scheduler.prototype.scheduleScraping = function() {
       .on('execution:start', function() {
         spec.status = 'working';
         spec.message = 'Scraping around...';
-        spec.next = null;
 
         self.emit('exec:start', copy(spec, 'sid,status,last,next,message'));
       })
       .on('execution:error', function(err) {
+        var interval = conf.interval - Date.now() + spec.next;
+
         spec.status = 'error';
         spec.message = err;
         spec.last = scraper.started;
-        spec.next = Date.now() + conf.interval;
+        spec.next += conf.interval;
 
         self.emit('exec:error', err, copy(spec, 'sid,status,last,next,message'));
-        spec._tm = setTimeout(spec.run, conf.interval);
+        spec._tm = setTimeout(spec.run, interval);
       })
       .on('execution:finished', function(data) {
+        var interval = conf.interval - Date.now() + spec.next;
+
         spec.status = 'idle';
         spec.message = util.format('Fetched %d records', data.length);
         spec.last = scraper.started;
-        spec.next = Date.now() + conf.interval;
+        spec.next += conf.interval;
 
         self.emit('exec:finished', copy(spec, 'sid,status,last,next,message'));
-        spec._tm = setTimeout(spec.run, conf.interval);
+        spec._tm = setTimeout(spec.run, interval);
       });
 
     logger.info(
@@ -90,9 +93,10 @@ Scheduler.prototype.scheduleScraping = function() {
 
     if (!conf.timeout) {
       spec.run();
+      spec.next = Date.now();
     } else {
-      spec.next = Date.now() + conf.timeout;
       setTimeout(spec.run, conf.timeout);
+      spec.next = Date.now() + conf.timeout;
     }
 
     tasks[conf.SID] = spec;
