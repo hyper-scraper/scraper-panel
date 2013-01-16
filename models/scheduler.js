@@ -81,7 +81,7 @@ Scheduler.prototype.scheduleScraping = function() {
         self.emit('exec:error', err, copy(spec, 'sid,status,last,next,message'));
         spec._tm = setTimeout(spec.run, interval);
 
-        hooks && hooks.emit('exec:error', error, conf);
+        hooks && hooks.emit('exec:error', err, conf);
       })
       .on('execution:finished', function(data) {
         var interval = conf.interval - Date.now() + spec.next;
