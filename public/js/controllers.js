@@ -9,9 +9,9 @@
  * @constructor
  */
 function MainCtrl($scope, $log) {
-   $scope.$on('ajax:loading', function(e, loading) {
-     $scope.ajaxLoading = loading;
-   });
+  $scope.$on('ajax:loading', function(e, loading) {
+    $scope.ajaxLoading = loading;
+  });
 }
 
 
@@ -121,12 +121,12 @@ function ScraperCtrl($scope, $routeParams, ScraperDAO) {
  *    Property name for collection
  * @constructor
  */
-function ResourceCtrl($scope, DAO, dataProperty) {
+function ResourceCtrl($scope, DAO, dataProperty, params) {
   dataProperty = dataProperty || 'data';
 
   this.update = function() {
     $scope.$emit('ajax:loading', true);
-    $scope[dataProperty] = DAO.query(function() {
+    $scope[dataProperty] = DAO.query(params, function() {
       $scope.$emit('ajax:loading', false);
     });
   };
@@ -144,10 +144,69 @@ function ResourceCtrl($scope, DAO, dataProperty) {
  *    Controller scope
  * @param AdvertisementDAO
  *    Advertisement resource model
+ * @param $routeParams
+ *    Hash with current route params
+ * @param $http
+ *    HTTP service
+ * @param $location
+ *    Location service
  * @constructor
  */
-function AdvertisementsCtrl($scope, AdvertisementDAO) {
-  ResourceCtrl.call(this, $scope, AdvertisementDAO, 'ads');
+function AdvertisementsCtrl($scope, AdvertisementDAO, $routeParams, $http, $location) {
+  var page = (parseInt($routeParams.page, 10) - 1) || 0;
+  ResourceCtrl.call(this, $scope, AdvertisementDAO, 'ads', {
+    page: page + 1
+  });
+
+  $scope.page = page;
+  $http
+    .get('/api/advertisements/count')
+    .success(function(data) {
+
+      var count = Math.ceil(data.count / 20)
+        , showPages = 9
+        , offset = 4
+        , start = $scope.page - offset
+        , i = 0
+        , pages = [];
+      if (count < showPages) {
+        start = 0;
+        showPages = count;
+      } else if (start < 0) {
+        start = 0;
+      } else if ($scope.page + offset > count - 1) {
+        start = count - showPages;
+      }
+
+      while (i < showPages) {
+        pages.push(i++ + start);
+      }
+
+      $scope.count = count;
+      $scope.pages = pages;
+    });
+
+  $scope.classAdvertisement = function(ad) {
+    return ad.blocked
+      ? 'error'
+      : '';
+  };
+
+  $scope.classPage = function(page) {
+    return ($scope.page === page)
+      ? 'active'
+      : '';
+  };
+
+  $scope.moveToPageBy = function(offset) {
+    var page = $scope.page
+      , count = $scope.count
+      , newPage = page + offset;
+
+    if (newPage >= 0 && newPage <= count - 1) {
+      $location.path('/advertisements/page/' + (newPage + 1));
+    }
+  };
 }
 inherits(AdvertisementsCtrl, ResourceCtrl);
 
@@ -181,10 +240,10 @@ function AdvertisementCtrl($scope, $routeParams, AdvertisementDAO) {
  *    Blocked resource model
  * @constructor
  */
-function BlockedCtrl($scope, BlockedDAO) {
-  ResourceCtrl.call(this, $scope, BlockedDAO, 'blocked');
-}
-inherits(ExecutionsCtrl, ResourceCtrl);
+/*function BlockedCtrl($scope, BlockedDAO) {
+ ResourceCtrl.call(this, $scope, BlockedDAO, 'blocked');
+ }
+ inherits(ExecutionsCtrl, ResourceCtrl);*/
 
 
 

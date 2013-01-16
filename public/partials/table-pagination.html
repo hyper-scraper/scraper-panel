@@ -1,0 +1,17 @@
+<ul>
+  <li>
+    <a ng-click="moveToPageBy(-1)">
+      {{'Prev' | i18n}}
+    </a>
+  </li>
+  <li ng-repeat="p in pages" ng-class="classPage(p)">
+    <a ng-href="#/advertisements/page/{{p+1}}">
+      {{p+1}}
+    </a>
+  </li>
+  <li>
+    <a ng-click="moveToPageBy(1)">
+      {{'Next' | i18n}}
+    </a>
+  </li>
+</ul>

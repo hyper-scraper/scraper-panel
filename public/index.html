@@ -13,14 +13,13 @@
   <nav class="clearfix">
     <a class="menu" href="#/scrapers">\{{'Main' | i18n}}</a>
     <a class="menu" href="#/advertisements">\{{'Advertisements' | i18n}}</a>
-    <a class="menu blocked" href="#/blocked">\{{'Blocked' | i18n}}</a>
     <a class="menu last" href="#/executions">\{{'Executions' | i18n}}</a>
 
     <img ng-show="ajaxLoading" src="img/ajax-loader.gif" class="pull-right"/>
   </nav>
 
   <div id="content">
-    <div ng-view ng-hide="ajaxLoading"></div>
+    <div ng-view></div>
   </div>
 
   <!-- In production use:

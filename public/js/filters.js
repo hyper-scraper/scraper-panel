@@ -19,19 +19,19 @@ angular
       return i18n.t(val);
     };
   })
-  .filter('na', function() {
+  .filter('na', function(i18n) {
     return function(val) {
       if (!!val) {
         return val;
       } else {
-        return 'N/A';
+        return i18n.t('N/A');
       }
     }
   })
-  .filter('fixed', function() {
+  .filter('fixed', function(i18n) {
     return function(val, length) {
       if (!val) {
-        return '';
+        return i18n.t('N/A');
       } else if (val.length < length - 3) {
         return val;
       } else {

@@ -11,9 +11,9 @@ angular
   .factory('AdvertisementDAO', function($resource) {
     return $resource('/api/advertisements/:id', {id: '@id'});
   })
-  .factory('BlockedDAO', function($resource) {
+  /*.factory('BlockedDAO', function($resource) {
     return $resource('/api/advertisements/blocked/:id', {id: '@id'});
-  })
+  })*/
   .factory('ExecutionDAO', function($resource) {
     return $resource('api/executions/:id', {id: '@id'});
   })

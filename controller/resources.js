@@ -65,21 +65,27 @@ module.exports = function(app) {
   });
 
   app.get('/api/advertisements', function(req, res, next) {
-    var page = parseInt(req.params.page) || 0;
+    var page = (parseInt(req.query.page)-1) || 0;
+    if (page < 0) page = 0;
+
     Advertisement
-      .select('id, sid, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
-      .where({blocked: 0})
+      .select('id, sid, blocked, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
       .order('id DESC')
-      .page(page, 10)
+      .page(page, 20)
       .load('scraper', function(s) {
-        s.select('scrapers.id as id');
+        s.select('scrapers.resource as name');
       })
       .all(errorOrData(res, next));
   });
 
 
+  app.get('/api/advertisements/count', function(req, res, next) {
+    Advertisement
+      .select('COUNT(id) as count')
+      .one(errorOrData(res, next));
+  });
 
-  app.get('/api/advertisements/blocked', function(req, res, next) {
+  /*app.get('/api/advertisements/blocked', function(req, res, next) {
     var page = parseInt(req.params.page) || 0;
     Advertisement
       .select('id, sid, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
@@ -90,7 +96,7 @@ module.exports = function(app) {
         s.select('scrapers.id as id');
       })
       .all(errorOrData(res, next));
-  });
+  });*/
 
   app.get('/api/advertisements/:id', function(req, res, next) {
     Advertisement
@@ -108,6 +114,8 @@ module.exports = function(app) {
 
   app.get('/api/executions', function(req, res, next) {
     var page = parseInt(req.params.page) || 0;
+    if (page < 0) page = 0;
+
     Execution
       .select('id, sid, start_time, finish_time, records, error')
       .order('id DESC')
