@@ -164,7 +164,7 @@ NNScraper.prototype.getItemData = function(page, url, callback) {
 
       // name, phone
       if (phoneDirty) {
-        name = phoneDirty.replace(/[\(\)0-9\+\-]/g, '');
+        name = $('.rlTel').text().replace(/[\(\)0-9\+\-]/g, '').trim();
         phone = phoneDirty.replace(/[^0-9]/g, '');
       }
 
