@@ -2,7 +2,6 @@
 
 var async = require('async')
   , EventEmitter = require('events').EventEmitter
-  , phantomProxy = require('phantom-proxy')
   , log = require('../log')
   , phantomLogger = log.getLogger('PhantomJS')
   , util = require('util')
@@ -72,7 +71,9 @@ BaseScraper.prototype.run = function() {
      */
     function(cb) {
       phantomConf.port = 1060 + config.SID;
-      phantomProxy.create(phantomConf, function(instance) {
+      self.cleanRequireCacheFor('phantom-proxy');
+
+      require('phantom-proxy').create(phantomConf, function(instance) {
         proxy = instance;
         proxy.page.on('error', function(err) {
           err && phantomLogger.error('Uncaught error: %s', err);
@@ -102,10 +103,7 @@ BaseScraper.prototype.run = function() {
      *    async.js callback
      */
     function(list, cb) {
-      if (!list.length) {
-        return cb(new Error('Empty URL list'));
-      }
-
+      list = list || [];
       var nodups = [];
       list.forEach(function(url) {
         if (nodups.indexOf(url) === -1) {
@@ -433,6 +431,26 @@ BaseScraper.prototype._renderImage = function(page, fmt, coords, callback) {
       callback(ex);
     }
   }
+};
+
+
+/**
+ * Clean require.cache
+ *
+ * @param sub
+ *    Substring to search in paths of cached modules
+ * @private
+ */
+BaseScraper.prototype.cleanRequireCacheFor = function(sub) {
+  var cache = require.cache
+    , k;
+
+  for (k in cache) {
+    if (cache.hasOwnProperty(k) && k.indexOf(sub) !== -1) {
+      delete cache[k];
+    }
+  }
+
 };
 
 

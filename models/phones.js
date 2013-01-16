@@ -5,8 +5,7 @@ var fs = require('fs')
   , mkdirp = require('mkdirp')
   , moment = require('moment')
   , path = require('path')
-  , logger = require('./log')('PhoneService')
-  , _instance = null;
+  , logger = require('./log')('PhoneService');
 
 
 /**

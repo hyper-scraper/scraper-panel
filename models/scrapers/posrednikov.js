@@ -285,6 +285,7 @@ PosrednikovScraper.prototype.getItemData = function(page, url, callback) {
  */
 PosrednikovScraper.prototype.filterList = function(list, callback) {
   var config = this.config;
+  if (!list.length) return callback(null, list);
 
   Advertisement
     .select('ad_url')
