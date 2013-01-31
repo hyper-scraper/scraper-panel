@@ -81,7 +81,7 @@ function IRRScraper(options) {
 
           item.sid = self.config.SID;
           item.eid = res.insertId;
-          item.checksum = sha1(item.sid, ':', item.ad_url);
+          item.checksum = sha1(item.sid, ':', item.ad_url, ':', item.error);
 
           Advertisement
             .insert(item)

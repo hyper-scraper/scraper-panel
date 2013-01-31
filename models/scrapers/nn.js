@@ -81,7 +81,7 @@ function NNScraper(options) {
 
           item.sid = self.config.SID;
           item.eid = res.insertId;
-          item.checksum = sha1(item.sid, ':', item.ad_url);
+          item.checksum = sha1(item.sid, ':', item.ad_url, ':', item.error);
 
           Advertisement
             .insert(item)
@@ -208,7 +208,7 @@ NNScraper.prototype.getItemData = function(page, url, callback) {
         ad_price:          price,
         ad_price_type:     price_type,
         ad_picture:        imageUrl,
-        ad_url:            window.location.href.replace(/#.*$/, '')
+        ad_url:            url
       });
     },
     function(json) {
