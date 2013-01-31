@@ -4,7 +4,7 @@
 <div class="block">
 
   <table class="table">
-    <thead ng-hide="ajaxLoading">
+    <thead>
       <tr>
         <td colspan="11">
           <span class="pull-right">Page: {{page+1}} of {{count}}</span>
@@ -29,7 +29,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr ng-repeat="ad in ads" ng-hide="ajaxLoading" ng-class="classAdvertisement(ad)">
+      <tr ng-repeat="ad in ads" ng-class="classAdvertisement(ad)">
         <td width="3%">
           <a href="#/advertisements/{{ad.id}}">#{{ad.id}}</a>
         </td>
@@ -47,16 +47,11 @@
         <td width="10%">{{ad.ad_landlord_name | na}}</td>
         <td width="10%">{{ad.ad_landlord_type | landlord_type}}</td>
       </tr>
-      <tr ng-hide="ajaxLoading">
+      <tr>
         <td colspan="11">
           <div class="pagination pagination-centered" ng-include
                src="'partials/table-pagination.html'">
           </div>
-        </td>
-      </tr>
-      <tr ng-show="ajaxLoading">
-        <td colspan="11" align="center">
-          <img ng-show="ajaxLoading" src="img/ajax-loader.gif"/>
         </td>
       </tr>
     </tbody>

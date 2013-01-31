@@ -263,7 +263,12 @@ SlandoScraper.prototype.getItemData = function(page, url, callback) {
 
           // in blacklist?
           function(phone, innerCallback) {
-            data.ad_landlord_phone = phone;
+            if (Array.isArray(phone)) {
+              data.ad_landlord_phone = phone.join(', ');
+            } else {
+              data.ad_landlord_phone = phone;
+            }
+
             phoneService.isBlocked(phone, innerCallback);
           }
 

@@ -1,6 +1,6 @@
 {
   "name":         "scraper-panel",
-  "version":      "0.0.8",
+  "version":      "0.1.0",
   "author":       {
     "name":  "Alexander Makarenko",
     "email": "estliberitas@gmail.com",
@@ -8,7 +8,6 @@
   },
   "private":      true,
   "scripts":      {
-    "preinstall": "mkdir node_modules 2>/dev/null ; sh install-mapper.sh",
     "start":      "node app"
   },
   "dependencies": {
@@ -19,7 +18,7 @@
     "handlebars":      "1.0.7",
     "less-middleware": "0.1.9",
     "log4js":          "0.5.6",
-    "mapper":          "0.2.2-pre",
+    "mapper":          "0.2.4-pre",
     "mkdirp":          "0.3.4",
     "moment":          "1.7.2",
     "phantom-proxy":   "latest",

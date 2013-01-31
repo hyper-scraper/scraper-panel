@@ -56,10 +56,13 @@ PhonesService.prototype.OCR = function(imageBuffer, query, body, callback) {
 
       } else {
         var phone = res.result;
-        phone = phone.replace(/[^0-9]/g, '');
+        phone = phone.replace(/[^0-9,]/g, '');
 
         if (!phone) {
           self.saveNotIdentified(imageBuffer, body.type);
+        }
+        if (phone.indexOf(',') !== -1) {
+          phone = phone.split(',');
         }
 
         callback(null, phone);
@@ -72,12 +75,19 @@ PhonesService.prototype.OCR = function(imageBuffer, query, body, callback) {
 /**
  * Check if phone number is in blacklist
  *
- * @param {String} phoneNumber
- *    Phone number
+ * @param {String|Array} phoneNumber
+ *    Phone number or array with numbers
  * @param {Function} callback
  *    Function taking (err, isBlocked)
  */
 PhonesService.prototype.isBlocked = function(phoneNumber, callback) {
+  var query;
+  if (Array.isArray(phoneNumber)) {
+    query = phoneNumber;
+  } else {
+    query = [phoneNumber];
+  }
+
   this._httpRequest(
     {
       hostname: '85.25.148.30',
@@ -89,7 +99,7 @@ PhonesService.prototype.isBlocked = function(phoneNumber, callback) {
       }
     },
 
-    [phoneNumber],
+    query,
 
     function(err, res) {
       if (err) {
@@ -103,10 +113,13 @@ PhonesService.prototype.isBlocked = function(phoneNumber, callback) {
         callback(err);
 
       } else {
-        var blocked = res.shift() === phoneNumber;
-        if (blocked) {
-          logger.debug('Phone %s is in blacklist', phoneNumber);
-        }
+        var blocked = query.some(function(phone) {
+          var isBlocked = (res.indexOf(phone) !== -1);
+          if (isBlocked) {
+            logger.debug('Phone(s) %s is in blacklist', phone);
+          }
+          return isBlocked;
+        });
 
         callback(null, blocked);
       }

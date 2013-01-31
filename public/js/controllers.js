@@ -17,6 +17,21 @@ function MainCtrl($scope, $log) {
 
 
 
+/**
+ * Scrapers view controller
+ *
+ * @param $scope
+ *    Controller scope
+ * @param ScraperDAO
+ *    Scraper resource DAO
+ * @param socket
+ *    Socket.io Angular service
+ * @param $notifications
+ *    Webkit notifications Angular service
+ * @param i18n
+ *    Localization Angular service
+ * @constructor
+ */
 function ScrapersCtrl($scope, ScraperDAO, socket, $notifications, i18n) {
   var self = this;
   $scope.scrapers = ScraperDAO.query(function() {
@@ -111,7 +126,7 @@ function ScraperCtrl($scope, $routeParams, ScraperDAO) {
 
 
 /**
- * Base class for controllers working with resources
+ * Base controller for working with resources
  *
  * @param $scope
  *    Scope of controller
@@ -119,15 +134,26 @@ function ScraperCtrl($scope, $routeParams, ScraperDAO) {
  *    $resource instance
  * @param dataProperty
  *    Property name for collection
+ * @param [page]
+ *    View page number
  * @constructor
  */
-function ResourceCtrl($scope, DAO, dataProperty, params) {
+function PagedResourceCntl($scope, DAO, dataProperty, page) {
+  var self = this;
   dataProperty = dataProperty || 'data';
+  if (typeof page !== 'number') {
+    page = (parseInt(page, 10) - 1) || 0;
+  }
 
   this.update = function() {
+    if (this.loading) return;
+    this.loading = true;
+
+    $scope.page = page;
     $scope.$emit('ajax:loading', true);
-    $scope[dataProperty] = DAO.query(params, function() {
+    $scope[dataProperty] = DAO.query({page: page + 1}, function() {
       $scope.$emit('ajax:loading', false);
+      self.loading = false;
     });
   };
 
@@ -150,41 +176,44 @@ function ResourceCtrl($scope, DAO, dataProperty, params) {
  *    HTTP service
  * @param $location
  *    Location service
+ * @param socket
+ *    Socket.io Angular service
  * @constructor
+ * @extends {PagedResourceCntl}
  */
-function AdvertisementsCtrl($scope, AdvertisementDAO, $routeParams, $http, $location) {
-  var page = (parseInt($routeParams.page, 10) - 1) || 0;
-  ResourceCtrl.call(this, $scope, AdvertisementDAO, 'ads', {
-    page: page + 1
-  });
+function AdvertisementsCtrl($scope, AdvertisementDAO, $routeParams, $http, $location, socket) {
+  PagedResourceCntl.call(this, $scope, AdvertisementDAO, 'ads', $routeParams.page);
+  var self = this;
 
-  $scope.page = page;
-  $http
-    .get('/api/advertisements/count')
-    .success(function(data) {
 
-      var count = Math.ceil(data.count / 20)
-        , showPages = 9
-        , offset = 4
-        , start = $scope.page - offset
-        , i = 0
-        , pages = [];
-      if (count < showPages) {
-        start = 0;
-        showPages = count;
-      } else if (start < 0) {
-        start = 0;
-      } else if ($scope.page + offset > count - 1) {
-        start = count - showPages;
-      }
+  this.updatePager = function() {
+    $http
+      .get('/api/advertisements/count')
+      .success(function(data) {
 
-      while (i < showPages) {
-        pages.push(i++ + start);
-      }
+        var count = Math.ceil(data.count / 20)
+          , showPages = 9
+          , offset = 4
+          , start = $scope.page - offset
+          , i = 0
+          , pages = [];
+        if (count < showPages) {
+          start = 0;
+          showPages = count;
+        } else if (start < 0) {
+          start = 0;
+        } else if ($scope.page + offset > count - 1) {
+          start = count - showPages;
+        }
 
-      $scope.count = count;
-      $scope.pages = pages;
-    });
+        while (i < showPages) {
+          pages.push(i++ + start);
+        }
+
+        $scope.count = count;
+        $scope.pages = pages;
+      });
+  };
 
   $scope.classAdvertisement = function(ad) {
     return ad.blocked
@@ -207,8 +236,14 @@ function AdvertisementsCtrl($scope, AdvertisementDAO, $routeParams, $http, $loca
       $location.path('/advertisements/page/' + (newPage + 1));
     }
   };
+
+  socket.on('exec:finished', function() {
+    self.update();
+  });
+
+  this.updatePager();
 }
-inherits(AdvertisementsCtrl, ResourceCtrl);
+inherits(AdvertisementsCtrl, PagedResourceCntl);
 
 
 
@@ -256,11 +291,12 @@ function AdvertisementCtrl($scope, $routeParams, AdvertisementDAO) {
  * @param ExecutionDAO
  *    Execution resource model
  * @constructor
+ * @extends {PagedResourceCntl}
  */
 function ExecutionsCtrl($scope, ExecutionDAO) {
-  ResourceCtrl.call(this, $scope, ExecutionDAO, 'executions');
+  PagedResourceCntl.call(this, $scope, ExecutionDAO, 'executions');
 }
-inherits(ExecutionsCtrl, ResourceCtrl);
+inherits(ExecutionsCtrl, PagedResourceCntl);
 
 
 

@@ -9,6 +9,13 @@ var logger = require('./log')('mapper')
   , Scraper;
 
 
+// configure through lambda
+config.configureFn = function(client) {
+  client.setOptionSync(mysql.MYSQL_SET_CHARSET_NAME, config.charset);
+  client.setOptionSync(mysql.MYSQL_OPT_RECONNECT, 1);
+};
+
+
 Mapper.connect(config, {
   verbose: config.verbose,
   strict: false,

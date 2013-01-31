@@ -14,11 +14,9 @@ function setSid(req, res, next) {
 
 function errorOrData(res, next) {
   return function(err, data) {
-    if (err) {
-      next(err);
-    } else {
-      res.send(200, data);
-    }
+    if (err) return next(err);
+    else if (!data) return next(new Error('No data'));
+    res.send(200, data);
   }
 }
 
@@ -70,6 +68,7 @@ module.exports = function(app) {
 
     Advertisement
       .select('id, sid, blocked, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
+      .where('blocked = 0 AND ad_landlord_phone IS NOT NULL AND ad_landlord_phone <> 0')
       .order('id DESC')
       .page(page, 20)
       .load('scraper', function(s) {
@@ -82,6 +81,7 @@ module.exports = function(app) {
   app.get('/api/advertisements/count', function(req, res, next) {
     Advertisement
       .select('COUNT(id) as count')
+      .where('blocked = 0 AND ad_landlord_phone IS NOT NULL AND ad_landlord_phone <> 0')
       .one(errorOrData(res, next));
   });
 
@@ -101,9 +101,10 @@ module.exports = function(app) {
   app.get('/api/advertisements/:id', function(req, res, next) {
     Advertisement
       .select('*')
-      .where({id: req.params.id})
+      .where('id = ? AND blocked = 0', [req.params.id])
       .one(function(err, data) {
         if (err) return next(err);
+        else if (!data) return next(new Error('No data'));
 
         if (data.ad_picture) {
           data.ad_picture = data.ad_picture.toString();
