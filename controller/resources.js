@@ -101,7 +101,7 @@ module.exports = function(app) {
   app.get('/api/advertisements/:id', function(req, res, next) {
     Advertisement
       .select('*')
-      .where('id = ? AND blocked = 0', [req.params.id])
+      .where({id: req.params.id})
       .one(function(err, data) {
         if (err) return next(err);
         else if (!data) return next(new Error('No data'));
