@@ -71,28 +71,24 @@ Scheduler.prototype.scheduleScraping = function() {
         hooks && hooks.emit('exec:start', conf);
       })
       .on('execution:error', function(err) {
-        var interval = conf.interval - Date.now() + spec.next;
-
         spec.status = 'error';
         spec.message = err;
         spec.last = scraper.started;
-        spec.next += conf.interval;
+        spec.next = Date.now() + conf.interval;
 
         self.emit('exec:error', err, copy(spec, 'sid,status,last,next,message'));
-        spec._tm = setTimeout(spec.run, interval);
+        spec._tm = setTimeout(spec.run, conf.interval);
 
         hooks && hooks.emit('exec:error', err, conf);
       })
       .on('execution:finished', function(data) {
-        var interval = conf.interval - Date.now() + spec.next;
-
         spec.status = 'idle';
         spec.message = util.format('Fetched %d records', data.length);
         spec.last = scraper.started;
-        spec.next += conf.interval;
+        spec.next = Date.now() + conf.interval;
 
         self.emit('exec:finished', copy(spec, 'sid,status,last,next,message'));
-        spec._tm = setTimeout(spec.run, interval);
+        spec._tm = setTimeout(spec.run, conf.interval);
 
         hooks && hooks.emit('exec:finished', data, conf);
       });
