@@ -237,8 +237,13 @@ function AdvertisementsCtrl($scope, AdvertisementDAO, $routeParams, $http, $loca
     }
   };
 
-  socket.on('exec:finished', function() {
+  self._updateInterval = setInterval(function() {
     self.update();
+    self.updatePager();
+  }, 60000);
+
+  $scope.on('$destroy', function() {
+    clearInterval(self._updateInterval);
   });
 
   this.updatePager();
