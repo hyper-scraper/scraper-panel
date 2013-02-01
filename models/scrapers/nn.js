@@ -1,102 +1,24 @@
 'use strict';
 
 var async = require('async')
-  , BaseScraper = require('./base-scraper')
-  , crypto = require('crypto')
-  , db = require('../db')
-  , http = require('http')
-  , Advertisement = db.Advertisement
-  , Execution = db.Execution
-  , util = require('util')
-  , __slice = [].slice;
-
-
-/**
- * Make SHA-1 hash
- */
-function sha1() {
-  var args = __slice.call(arguments, 0);
-  return crypto
-    .createHash('sha1')
-    .update(args.join(''), 'utf8')
-    .digest('hex');
-}
+  , DbWriter = require('./db-writer')
+  , phoneService = require('../phones')
+  , util = require('util');
 
 
 /**
  * nn.ru scraper
  *
  * @constructor
- * @extends {BaseScraper}
+ * @extends {DbWriter}
  */
 function NNScraper(options) {
-  BaseScraper.call(this, options);
-
-  var self = this
-    , logger = this.getLogger();
+  DbWriter.call(this, options);
 
   this.config.externalJQuery = options.externalJQuery || false;
   this.config.BASE_URL = 'http://real.nn.ru/ad2';
-
-  this.on('execution:error', function(err) {
-    if (!err) {
-      err = 'Unknown error';
-    } else if (err.stack) {
-      err = err.stack;
-    }
-
-    Execution
-      .insert({
-        sid:         self.config.SID,
-        start_time:  self.started,
-        finish_time: self.finished,
-        error:       err
-      })
-      .exec(function(err) {
-        delete self.started;
-        if (err) {
-          logger.error('Error occurred during execution creation: %s', err);
-        }
-      });
-  });
-
-  this.on('execution:finished', function(data) {
-    Execution
-      .insert({
-        sid:         self.config.SID,
-        start_time:  self.started,
-        finish_time: self.finished,
-        records:     data.length,
-        error:       null
-      })
-      .exec(function(err, res) {
-        async.forEach(data, function(item, cb) {
-          // if [url, error]
-          if (Array.isArray(item)) {
-            item = {
-              ad_url: item[0],
-              error:  item[1].stack ? item[1].stack : item[1]
-            };
-          }
-
-          item.sid = self.config.SID;
-          item.eid = res.insertId;
-          item.checksum = sha1(item.sid, ':', item.ad_url, ':', item.error);
-
-          Advertisement
-            .insert(item)
-            .exec(function(err) {
-              if (err) {
-                logger.error('Error occurred during ad creation: %s', err);
-              }
-              cb();
-            })
-        }, function() {
-        });
-      });
-  });
 }
-util.inherits(NNScraper, BaseScraper);
+util.inherits(NNScraper, DbWriter);
 
 
 /**
@@ -207,8 +129,7 @@ NNScraper.prototype.getItemData = function(page, url, callback) {
         ad_city:           city,
         ad_price:          price,
         ad_price_type:     price_type,
-        ad_picture:        imageUrl,
-        ad_url:            url
+        ad_picture:        imageUrl
       });
     },
     function(json) {
@@ -220,6 +141,8 @@ NNScraper.prototype.getItemData = function(page, url, callback) {
       }
 
       data.create_time = started.toJSON();
+      data.ad_url = url;
+
       for (k in data) {
         if (data.hasOwnProperty(k)) {
           if (data[k] && typeof data[k] === 'string') {
@@ -230,43 +153,16 @@ NNScraper.prototype.getItemData = function(page, url, callback) {
         }
       }
 
-      callback(null, data);
+      if (data.ad_landlord_phone) {
+        phoneService.isBlocked(data.ad_landlord_phone, function(err, blocked) {
+          data.blocked = blocked;
+          callback(err, data);
+        });
+      } else {
+        callback(null, data);
+      }
     }
   );
-};
-
-
-/**
- * Remove URLs that already have been processed
- *
- * @param {Array} list
- *    Array of URLs
- * @param {Function} callback
- *    Callback taking args (err, filtered)
- */
-NNScraper.prototype.filterList = function(list, callback) {
-  var config = this.config;
-  if (!list.length) return callback(null, list);
-
-  Advertisement
-    .select('ad_url')
-    .order('id DESC')
-    .where({ad_url: list, error: null})
-    .all(function(err, data) {
-      var filtered;
-      data.forEach(function(item) {
-        var idx = list.indexOf(item.ad_url);
-        if (idx !== -1) {
-          list.splice(idx, 1);
-        }
-      });
-      filtered = list;
-
-      if (config.limit && config.limit < filtered.length) {
-        filtered = filtered.slice(filtered.length - config.limit);
-      }
-      callback(null, filtered);
-    });
 };
 
 

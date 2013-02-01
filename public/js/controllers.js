@@ -242,7 +242,7 @@ function AdvertisementsCtrl($scope, AdvertisementDAO, $routeParams, $http, $loca
     self.updatePager();
   }, 60000);
 
-  $scope.on('$destroy', function() {
+  $scope.$on('$destroy', function() {
     clearInterval(self._updateInterval);
   });
 
