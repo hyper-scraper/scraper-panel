@@ -195,4 +195,21 @@ IRRScraper.prototype.getItemData = function(page, url, callback) {
 };
 
 
-module.exports = IRRScraper;
+/**
+ * Skip all the non-NN
+ *
+ * @see {DbWriter.filterList(list, cb)}
+ */
+IRRScraper.prototype.filterList = function(list, cb) {
+  var preFiltered = list.filter(function(url) {
+    return url.indexOf('nizhniynovgorod.irr.ru') !== -1;
+  });
+
+  DbWriter.prototype.filterList.call(this, preFiltered, cb);
+};
+
+
+(function() {
+  module.exports = IRRScraper;
+})();
+
