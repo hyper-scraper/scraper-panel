@@ -68,7 +68,7 @@ module.exports = function(app) {
 
     Advertisement
       .select('id, sid, blocked, ad_id, create_time, ad_title, ad_description, ad_price, ad_price_type, ad_city, ad_landlord_name, ad_landlord_type, ad_landlord_phone, ad_url')
-      .where('blocked = 0 AND ad_landlord_phone IS NOT NULL AND ad_landlord_phone <> 0')
+      .where('blocked = 0 AND ad_landlord_phone IS NOT NULL AND ad_landlord_phone <> 0 AND ad_landlord_phone <> \'empty\'')
       .order('id DESC')
       .page(page, 20)
       .load('scraper', function(s) {
@@ -81,7 +81,7 @@ module.exports = function(app) {
   app.get('/api/advertisements/count', function(req, res, next) {
     Advertisement
       .select('COUNT(id) as count')
-      .where('blocked = 0 AND ad_landlord_phone IS NOT NULL AND ad_landlord_phone <> 0')
+      .where('blocked = 0 AND ad_landlord_phone IS NOT NULL AND ad_landlord_phone <> 0 AND ad_landlord_phone <> \'empty\'')
       .one(errorOrData(res, next));
   });
 

@@ -92,6 +92,10 @@ DbWriter.prototype.setupEventListeners = function() {
           item.eid = res.insertId;
           item.checksum = sha1(item.sid, ':', item.ad_url, ':', item.error);
 
+          if (!item.ad_landlord_phone && !item.error) {
+            item.ad_landlord_phone = 'empty';
+          }
+
           Advertisement
             .insert(item)
             .exec(function(err) {
