@@ -74,19 +74,21 @@ NNScraper.prototype.getItemData = function(page, url, callback) {
         , id = window.location.href.match(/=[0-9]+$/)
         , $addrImg = $('.rlParams').find('img[src*="map.gif"]')
         , city = null
-        , price = $('.rlHItemR_R').text().match(/[0-9 ]+/)
-        , price_type = $('.rlHItemR_R').text().trim().match(/[^ 0-9]+/)
+        , $price = $('.rlHItemR_R')
+        , price = $price.text().match(/[0-9 ]+/)
+        , price_type = $price.text().trim().match(/[^ 0-9]+/)
         , $kw = $('.rlParams-elem')
         , keywords = []
         , description = $('#adtext-block').text()
         , imageUrl = null
         , isPrivate = true
-        , phoneDirty = $('.rlTel').text().replace(/[\n\s\t]/g, '')
+        , $tel = $('.rlTel')
+        , phoneDirty = $tel.text().replace(/[\n\s\t]/g, '')
         , phone = null;
 
       // name, phone
       if (phoneDirty) {
-        name = $('.rlTel').text().replace(/[\(\)0-9\+\-]/g, '').trim();
+        name = $tel.text().replace(/[\(\)0-9\+\-]/g, '').trim();
         phone = phoneDirty.replace(/[^0-9]/g, '');
       }
 
@@ -111,12 +113,18 @@ NNScraper.prototype.getItemData = function(page, url, callback) {
       // keywords
       $kw.each(function() {
         var text = $(this).text().trim().replace(/[\t\s]+/, ' ')
-          , kv = [
-            text.match(/^.*(?=:)/).shift(),
-            text.match(/: .*$/).shift().substring(2)
-          ];
+          , key
+          , value;
 
-        keywords.push(kv.join(': '));
+        key = text.match(/^.*(?=:)/);
+        value = text.match(/: .*$/);
+
+        if (key) key = key.shift();
+        if (value) value = value.shift().substring(2);
+
+        if (key && value) {
+          keywords.push([key, value].join(': '));
+        }
       });
 
       return JSON.stringify({
